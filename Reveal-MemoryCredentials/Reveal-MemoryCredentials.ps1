@@ -28,16 +28,16 @@
     the name of a remote server you wan to reveal credentials
   
 .EXAMPLE
-    Dumping password on local host (Windows 7 + 2008r2)
-    .\Dump-MemoryCredentials.ps1 "1" "gen"
-    Dumping password on local host (Windows 8 + 2012)
-    .\Dump-MemoryCredentials.ps1 "2" "gen"
-    Dumping password on remote host
-    .\Dump-MemoryCredentials.ps1 "1" "" "serverName"
-    Dumping password from a dump file
-    .\Dump-MemoryCredentials.ps1 "1" "d:\dumpFromAComputerDirectory\"
-    Dumping password from a dump file (2003 server)
-    .\Dump-MemoryCredentials.ps1 "3" "D:\Scripting + tools\dumpCollection\2003_20150618154432"
+    Reveal password on local host (Windows 7 + 2008r2)
+    .\Reveal-MemoryCredentials.ps1 "1" "gen"
+    Reveal password on local host (Windows 8 + 2012)
+    .\Reveal-MemoryCredentials.ps1 "2" "gen"
+    Reveal password on remote host
+    .\Reveal-MemoryCredentials.ps1 "1" "" "serverName"
+    Reveal password from a dump file
+    .\Reveal-MemoryCredentials.ps1 "1" "d:\dumpFromAComputerDirectory\"
+    Reveal password from a dump file (2003 server)
+    .\Reveal-MemoryCredentials.ps1 "3" "D:\Scripting + tools\dumpCollection\2003_20150618154432"
 
 #>
 Param(
