@@ -17,6 +17,21 @@ with Powershell and CDB Command-Line Options (Windows Debuggers)
 It allows to retrieve credentials from windows 2003 to 2012 (it was tested on 2003, 2008r2, 2012 and Windows 7 and Windows 8).
 
 It works even if you are on another architecture than the system targeted.
+# Quick usage
+
+Launch the script (example for a D:\2003_20150618154432\lsass.dmp from a 2008r2 server)
+
+ \
+  \ /\   Follow the white Rabbit :-)
+  ( )       pabraeken@gmail.com
+.( @ ). 
+
+Mode (1, 2 or 3)?: 2      [enter]
+gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> "": D:\2008_20150618154432       [enter]
+Name of the remote server (if second parameter = ""):      [enter]
+
+--> a notepad open with the credentials found
+
 
 # Never ever give administrator access to your user
 
