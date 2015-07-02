@@ -1,3 +1,13 @@
+Disclaimer
+
+Any actions and or activities related to the material contained within this blog is solely your responsibility.The misuse of the information in this website can result in criminal charges brought against the persons in question. The authors will not be held responsible in the event any criminal charges be brought against any individuals misusing the information in this website to break the law.
+
+This script is published for educational use only. I am no way responsible for any misuse of the information.
+
+This article is related to Computer Security and I am not promote hacking / cracking / software piracy.
+
+This article is not a GUIDE of Hacking. It is only provide information about the legal ways of retrieving the passwords. You shall not misuse the information to gain unauthorised access. However you may try out these hacks on your own computer at your own risk. Performing hack attempts (without permission) on computers that you do not own is illegal.
+
 # RWMC
 Powershell - Reveal Windows Memory Credentials 
 
