@@ -27,7 +27,9 @@ Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 
 .( @ ). 
 
 Mode (1, 2 or 3)?: 2      [enter]
+
 gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> "": D:\2008_20150618154432       [enter]
+
 Name of the remote server (if second parameter = ""):      [enter]
 
 --> a notepad open with the credentials found
