@@ -19,7 +19,7 @@ It allows to retrieve credentials from windows 2003 to 2012 (it was tested on 20
 It works even if you are on another architecture than the system targeted.
 # Quick usage
 
-Launch the script (example for a D:\2003_20150618154432\lsass.dmp from a 2008r2 server)
+Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 server)
 
  \
   \ /\   Follow the white Rabbit :-)
