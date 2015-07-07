@@ -41,7 +41,11 @@ Name of the remote server (if second parameter = ""):      [enter]
 
 To run effectively this script you need two things :
 
-Allow Powershell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
+To run effectively this script you need :
 
-A Internet connection.
+* PowerShell 3
+* Allow PowerShell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
+* A Internet connection
+
+The script was tested on a 7 and on a 8 machine to retrieve password from Windows Server 2003,2008R2,2012,7 and 8.
 
