@@ -45,7 +45,7 @@ To run effectively this script you need :
 
 * PowerShell 3
 * Allow PowerShell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
-* A Internet connection
+* An Internet connection
 
 The script was tested on a 7 and on a 8 machine to retrieve password from Windows Server 2003,2008R2,2012,7 and 8.
 
