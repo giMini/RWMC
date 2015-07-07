@@ -1,5 +1,5 @@
 ﻿<#
-#requires -version 2
+#requires -version 3
 
 .SYNOPSIS         
     Reveal credentials from memory dump
