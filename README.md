@@ -23,7 +23,7 @@ Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 
 
  \
   \ /\   Follow the white Rabbit :-)
-  ( )       pabraeken@gmail.com
+  ( )       Pierre-Alexandre Braeken
 .( @ ). 
 
 Mode (1, 2 or 3)?: 2      [enter]
