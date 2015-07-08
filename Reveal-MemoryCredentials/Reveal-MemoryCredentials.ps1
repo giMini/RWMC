@@ -569,13 +569,13 @@ else {
             $_.Exception
         }
         #>
-        Copy-Item -Path "$scriptPath\dp.exe" -Destination "\\$computername\c$\temp\dp.exe"
-        $dumpAProcessPath = "C:\temp\dp.exe"
-        Run-WmiRemoteProcess $computername "$dumpAProcessPath lsass c:\temp" | Wait-Process
+        Copy-Item -Path "$scriptPath\dp.exe" -Destination "\\$computername\c$\Windows\Temp\dp.exe"
+        $dumpAProcessPath = "C:\Windows\Temp\dp.exe"
+        Run-WmiRemoteProcess $computername "$dumpAProcessPath lsass C:\Windows\Temp" | Wait-Process
         Start-Sleep -Seconds 15
-        Copy-Item -Path "\\$computername\c$\temp\lsass.dmp" -Destination "$logDirectoryPath"
-        Remove-Item -Force "\\$computername\c$\temp\dp.exe"
-        Remove-Item -Force "\\$computername\c$\temp\lsass.dmp"
+        Copy-Item -Path "\\$computername\c$\Windows\Temp\lsass.dmp" -Destination "$logDirectoryPath"
+        Remove-Item -Force "\\$computername\c$\Windows\Temp\dp.exe"
+        Remove-Item -Force "\\$computername\c$\Windows\Temp\lsass.dmp"
         Write-Progress -Activity "Lsass dump created" -status "Running..." -id 1
     }
     else {
