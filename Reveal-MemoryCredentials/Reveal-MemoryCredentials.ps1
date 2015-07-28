@@ -17,6 +17,17 @@
 .MODE
     1 --> Windows 7 + 2008r2
     2 --> Windows 8 + 2012
+
+    2r2 --> Windows 2012r2 
+For 2012r2, you have to add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest
+and then reboot.
+
+You have to dump the lsass process on the target machine and 
+then execute the script with option 
+* 2r2 
+* path\to\the\lsass.dmp (don't enter lsass.dmp, only the directory)
+
+
     3 --> Windows 2003
 
 .DUMP
@@ -27,18 +38,6 @@
 .SERVER
     the name of a remote server you wan to reveal credentials
   
-.EXAMPLE
-    Reveal password on local host (Windows 7 + 2008r2)
-    .\Reveal-MemoryCredentials.ps1 "1" "gen"
-    Reveal password on local host (Windows 8 + 2012)
-    .\Reveal-MemoryCredentials.ps1 "2" "gen"
-    Reveal password on remote host
-    .\Reveal-MemoryCredentials.ps1 "1" "" "serverName"
-    Reveal password from a dump file
-    .\Reveal-MemoryCredentials.ps1 "1" "d:\dumpFromAComputerDirectory\"
-    Reveal password from a dump file (2003 server)
-    .\Reveal-MemoryCredentials.ps1 "3" "D:\Scripting + tools\dumpCollection\2003_20150618154432"
-
 #>
 Param(
 [string]$mode="2",
