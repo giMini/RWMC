@@ -37,7 +37,10 @@ then execute the script with option
 
 .SERVER
     the name of a remote server you wan to reveal credentials
-  
+
+.CREDITS
+    Thanks to Benjamin Delpy for his work on mimikatz and Francesco Picasso (@dfirfpi) for his work on DES-X.
+
 #>
 Param(
 [string]$mode="2",
