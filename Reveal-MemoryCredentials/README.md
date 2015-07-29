@@ -17,6 +17,11 @@ with Powershell and CDB Command-Line Options (Windows Debuggers)
 It allows to retrieve credentials from windows 2003 to 2012 (it was tested on 2003, 2008r2, 2012, 2012r2 and Windows 7 - 32 and 64 bits and Windows 8).
 
 It works even if you are on another architecture than the system targeted.
+
+# How to use it ?
+
+http://sysadminconcombre.blogspot.ca/2015/07/how-to-hack-windows-password.html
+
 # Quick usage
 
 Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 server)
@@ -26,7 +31,7 @@ Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 
   ( )       Pierre-Alexandre Braeken
 .( @ ). 
 
-Mode (1, 2 or 3)?: 2      [enter]
+Mode (1, 132, 2, 2r2 or 3)?: 2      [enter]
 
 gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> "": D:\2008_20150618154432       [enter]
 
@@ -34,6 +39,32 @@ Name of the remote server (if second parameter = ""):      [enter]
 
 --> a notepad open with the credentials found
 
+# Features
+
+* it's fully PowerShell 
+* it can work locally, remotely or from a dump file collected on a machine 
+* it does not use the operating system .dll to locate credentials address in memory but a simple Microsoft debugger 
+* it does not use the operating system .dll to decypher passwords collected --> it is does in the PowerShell (AES, TripleDES, DES-X) 
+* it breaks undocumented Microsoft DES-X 
+* it works even if you are on a different architecture than the target 
+* it leaves no trace in memoryless
+
+# How to use it for Windows 2012R2 ?
+
+1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLMSYSTEMCurrentControlSetControlSecurityProvidersWDigest and then reboot
+
+2a) Retrieve remotely: 
+a. Launch the script
+b. Mode (1, 132, 2, 2r2 or 3)?: 2r2      [enter]
+	* serverName    [enter]
+	*				[enter]
+	
+2b) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option 
+( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :  
+a. Launch the script
+b. Mode (1, 132, 2, 2r2 or 3)?: 2r2      [enter]
+	* d:\directory_of_the_dump    [enter]
+	*							[enter]
 
 # Never ever give administrator access to your user
 
