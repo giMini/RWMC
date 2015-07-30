@@ -34,31 +34,30 @@ Name of the remote server (if second parameter = ""): [enter]
 --> a notepad open with the credentials found
 
 #Features
-it's fully PowerShell
-it can work locally, remotely or from a dump file collected on a machine
-it does not use the operating system .dll to locate credentials address in memory but a simple Microsoft debugger
-it does not use the operating system .dll to decypher passwords collected --> it is does in the PowerShell (AES, TripleDES, DES-X)
-it breaks undocumented Microsoft DES-X
-it works even if you are on a different architecture than the target
-it leaves no trace in memoryless
+* it's fully PowerShell
+* it can work locally, remotely or from a dump file collected on a machine
+* it does not use the operating system .dll to locate credentials address in memory but a simple Microsoft debugger
+* it does not use the operating system .dll to decypher passwords collected --> it is does in the PowerShell (AES, TripleDES, DES-X)
+* it breaks undocumented Microsoft DES-X
+* it works even if you are on a different architecture than the target
+* it leaves no trace in memoryless
 
 #How to use it for Windows 2012R2 or Windows 10?
 
 1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
 
 2a) Retrieve remotely: 
-	a. Launch the script 
-	b. Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
-		* serverName [enter] 
-		* [enter]
+	* Launch the script 
+	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
+	* serverName [enter] 
+	* [enter]
 
 1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
 
 2b) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option ( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :
 
-a. Launch the script 
-
-b. Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
+	* Launch the script 
+	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
 	* d:\directory_of_the_dump [enter] 
 	* [enter]
 
