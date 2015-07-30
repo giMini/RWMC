@@ -51,7 +51,7 @@ Name of the remote server (if second parameter = ""):      [enter]
 
 # How to use it for Windows 2012R2 ?
 
-1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLMSYSTEMCurrentControlSetControlSecurityProvidersWDigest and then reboot
+1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
 
 2a) Retrieve remotely: 
 a. Launch the script
