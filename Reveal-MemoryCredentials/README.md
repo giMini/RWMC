@@ -8,75 +8,54 @@ This article is related to Computer Security and I am not promote hacking / crac
 
 This article is not a GUIDE of Hacking. It is only provide information about the legal ways of retrieving the passwords. You shall not misuse the information to gain unauthorised access. However you may try out these hacks on your own computer at your own risk. Performing hack attempts (without permission) on computers that you do not own is illegal.
 
-# RWMC
-Powershell - Reveal Windows Memory Credentials 
+RWMC
+Powershell - Reveal Windows Memory Credentials
 
-The purpose of this script is to make a proof of concept of how retrieve Windows credentials 
-with Powershell and CDB Command-Line Options (Windows Debuggers) 
+The purpose of this script is to make a proof of concept of how retrieve Windows credentials with Powershell and CDB Command-Line Options (Windows Debuggers)
 
-It allows to retrieve credentials from windows 2003 to 2012 (it was tested on 2003, 2008r2, 2012, 2012r2 and Windows 7 - 32 and 64 bits and Windows 8).
+It allows to retrieve credentials from windows 2003 to 2012 and Windows 10 (it was tested on 2003, 2008r2, 2012, 2012r2 and Windows 7 - 32 and 64 bits, Windows 8 and Windows 10 Home edition).
 
 It works even if you are on another architecture than the system targeted.
 
-# How to use it ?
-
+How to use it ?
 http://sysadminconcombre.blogspot.ca/2015/07/how-to-hack-windows-password.html
 
-# Quick usage
-
+Quick usage
 Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 server)
 
- \
-  \ /\   Follow the white Rabbit :-)
-  ( )       Pierre-Alexandre Braeken
-.( @ ). 
+\ \ /\ Follow the white Rabbit :-) ( ) Pierre-Alexandre Braeken .( @ ).
 
-Mode (1, 132, 2, 2r2 or 3)?: 2      [enter]
+Mode (1, 132, 2, 2r2 or 3)?: 2 [enter]
 
-gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> "": D:\2008_20150618154432       [enter]
+gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> "": D:\2008_20150618154432 [enter]
 
-Name of the remote server (if second parameter = ""):      [enter]
+Name of the remote server (if second parameter = ""): [enter]
 
 --> a notepad open with the credentials found
 
-# Features
+Features
+it's fully PowerShell
+it can work locally, remotely or from a dump file collected on a machine
+it does not use the operating system .dll to locate credentials address in memory but a simple Microsoft debugger
+it does not use the operating system .dll to decypher passwords collected --> it is does in the PowerShell (AES, TripleDES, DES-X)
+it breaks undocumented Microsoft DES-X
+it works even if you are on a different architecture than the target
+it leaves no trace in memoryless
+How to use it for Windows 2012R2 ?
+1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
 
-* it's fully PowerShell 
-* it can work locally, remotely or from a dump file collected on a machine 
-* it does not use the operating system .dll to locate credentials address in memory but a simple Microsoft debugger 
-* it does not use the operating system .dll to decypher passwords collected --> it is does in the PowerShell (AES, TripleDES, DES-X) 
-* it breaks undocumented Microsoft DES-X 
-* it works even if you are on a different architecture than the target 
-* it leaves no trace in memoryless
+2a) Retrieve remotely: a. Launch the script b. Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] * serverName [enter] * [enter]
 
-# How to use it for Windows 2012R2 ?
+2b) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option ( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :
+a. Launch the script b. Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] * d:\directory_of_the_dump [enter] * [enter]
 
-1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLMSYSTEMCurrentControlSetControlSecurityProvidersWDigest and then reboot
-
-2a) Retrieve remotely: 
-a. Launch the script
-b. Mode (1, 132, 2, 2r2 or 3)?: 2r2      [enter]
-	* serverName    [enter]
-	*				[enter]
-	
-2b) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option 
-( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :  
-a. Launch the script
-b. Mode (1, 132, 2, 2r2 or 3)?: 2r2      [enter]
-	* d:\directory_of_the_dump    [enter]
-	*							[enter]
-
-# Never ever give administrator access to your user
-
-# Always audit what you sysadmin or provider are doing on your systems 
-
+Never ever give administrator access to your user
+Always audit what you sysadmin or provider are doing on your systems
 To run effectively this script you need two things :
 
 To run effectively this script you need :
 
-* PowerShell 3
-* Allow PowerShell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
-* An Internet connection
-
-The script was tested on a 7 and on a 8 machine to retrieve password from Windows Server 2003,2008R2,2012,7 and 8.
-
+PowerShell 3
+Allow PowerShell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
+An Internet connection
+The script was tested on a 7 and on a 8 machine to retrieve password from Windows Server 2003,2008R2,2012,2012R2,7 and 8 and 10.
