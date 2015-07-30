@@ -44,7 +44,11 @@ it leaves no trace in memoryless
 How to use it for Windows 2012R2 ?
 1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
 
+<<<<<<< HEAD
 2a) Retrieve remotely: a. Launch the script b. Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] * serverName [enter] * [enter]
+=======
+1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
+>>>>>>> origin/master
 
 2b) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option ( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :
 a. Launch the script b. Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] * d:\directory_of_the_dump [enter] * [enter]
