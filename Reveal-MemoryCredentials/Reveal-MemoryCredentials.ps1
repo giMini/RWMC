@@ -54,7 +54,12 @@ $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 $scriptFile = $MyInvocation.MyCommand.Definition
 $launchDate = get-date -f "yyyyMMddHHmmss"
 $logDirectoryPath = $scriptPath + "\" + $launchDate
-$CdbProgramPath = "$scriptPath\debugger\x86\cdb.exe"
+if($mode -eq "2r2") {
+    $CdbProgramPath = "$scriptPath\debugger\2r2\cdb.exe"
+}
+else {
+    $CdbProgramPath = "$scriptPath\debugger\pre2r2\cdb.exe"
+}
 $file = "$logDirectoryPath\lsass.dmp"
 $DebuggingScript = "$scriptPath\bufferCommand.txt"
 $pythonProgramPath = "$scriptPath\lsacollectbytes.py"
