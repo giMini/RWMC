@@ -62,7 +62,7 @@ Name of the remote server (if second parameter = ""): [enter]
 	* d:\directory_of_the_dump [enter] 
 	* [enter]
 
-2b) Locally :
+2c) Locally :
 
 	* Launch the script 
 	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
