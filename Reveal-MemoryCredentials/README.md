@@ -50,8 +50,8 @@ Name of the remote server (if second parameter = ""): [enter]
 
 	* Launch the script 
 	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
+	* 	     [enter]
 	* serverName [enter] 
-	* [enter]
 
 1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
 
@@ -60,6 +60,13 @@ Name of the remote server (if second parameter = ""): [enter]
 	* Launch the script 
 	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
 	* d:\directory_of_the_dump [enter] 
+	* [enter]
+
+2b) Locally :
+
+	* Launch the script 
+	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
+	* gen [enter] 
 	* [enter]
 
 #Never ever give administrator access to your user
