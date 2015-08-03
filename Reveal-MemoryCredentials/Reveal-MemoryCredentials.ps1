@@ -54,12 +54,6 @@ $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 $scriptFile = $MyInvocation.MyCommand.Definition
 $launchDate = get-date -f "yyyyMMddHHmmss"
 $logDirectoryPath = $scriptPath + "\" + $launchDate
-if($mode -eq "2r2") {
-    $CdbProgramPath = "$scriptPath\debugger\2r2\cdb.exe"
-}
-else {
-    $CdbProgramPath = "$scriptPath\debugger\pre2r2\cdb.exe"
-}
 $file = "$logDirectoryPath\lsass.dmp"
 $DebuggingScript = "$scriptPath\bufferCommand.txt"
 $pythonProgramPath = "$scriptPath\lsacollectbytes.py"
@@ -81,7 +75,12 @@ Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1�
 $mode = Read-Host 'Mode (1, 132, 2, 2r2 or 3)?'
 $dump = Read-Host 'gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> ""'
 $server = Read-Host 'Name of the remote server (if second parameter = "")'
-
+if($mode -eq "2r2") {
+    $CdbProgramPath = "$scriptPath\debugger\2r2\cdb.exe"
+}
+else {
+    $CdbProgramPath = "$scriptPath\debugger\pre2r2\cdb.exe"
+}
 if($dump -eq "" -or $dump -eq "gen"){
     if(!(Test-Path $logDirectoryPath)) {
         New-Item $logDirectoryPath -type directory | Out-Null
