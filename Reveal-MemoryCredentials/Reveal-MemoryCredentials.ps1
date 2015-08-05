@@ -1219,4 +1219,4 @@ Write-Progress -Activity "Removing symbols" -status "Running..." -id 1
 Remove-Item -Recurse -Force c:\symbols
 Write-Progress -Activity "Write informations in the log file" -status "Running..." -id 1
 End-Log -streamWriter $global:streamWriter
-Invoke-Item $logPathName
+notepad $logPathName
