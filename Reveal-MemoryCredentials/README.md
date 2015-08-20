@@ -25,11 +25,7 @@ Launch the script (example for a D:\2008_20150618154432\lsass.dmp from a 2008r2 
 
 \ \ /\ Follow the white Rabbit :-) ( ) Pierre-Alexandre Braeken .( @ ).
 
-Mode (1, 132, 2, 2r2 or 3)?: 2 [enter]
-
-gen = local credentials dump __ or __ file name of a dump __ or __ nothing -> "": D:\2008_20150618154432 [enter]
-
-Name of the remote server (if second parameter = ""): [enter]
+Local computer, Remote computer or from a dump file ? (local, remote, dump): local [enter]
 
 --> a notepad open with the credentials found
 
@@ -43,31 +39,22 @@ Name of the remote server (if second parameter = ""): [enter]
 * it leaves no trace in memoryless
 
 #How to use it for Windows 2012R2 or Windows 10?
-
-1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
-
-2a) Retrieve remotely: 
+1) Retrieve remotely: 
 
 	* Launch the script 
-	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
-	* 	     [enter]
+	* Local computer, Remote computer or from a dump file ? (local, remote, dump): remote [enter]
 	* serverName [enter] 
 
-1) Add this registry key UseLogonCredential (DWORD to set to 1) in HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest and then reboot
-
-2b) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option ( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :
+2) From a dump: if you have to dump the lsass process of a target machine, you can execute the script with option ( ! name you lsass dump "lsass.dmp" and don't enter the name for the option you enter, only the directory !) :
 
 	* Launch the script 
-	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
+	* Local computer, Remote computer or from a dump file ? (local, remote, dump): dump [enter]
 	* d:\directory_of_the_dump [enter] 
-	* [enter]
 
-2c) Locally :
+3) Locally :
 
 	* Launch the script 
-	* Mode (1, 132, 2, 2r2 or 3)?: 2r2 [enter] 
-	* gen [enter] 
-	* [enter]
+	* Local computer, Remote computer or from a dump file ? (local, remote, dump): local [enter]
 
 #Never ever give administrator access to your user
 Always audit what you sysadmin or provider are doing on your systems
