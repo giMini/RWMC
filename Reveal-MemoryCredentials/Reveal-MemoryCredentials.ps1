@@ -1149,8 +1149,8 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $loginPlainText = $loginPlainText1 -replace """",""                             
         if ((gwmi win32_computersystem).partofdomain -eq $true) {
             $user = ""
-            $user = Get-ADUser -Filter "UserPrincipalName -like '$loginPlainText'"             
-            if($user -ne $null) {
+            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText}             
+            if($user -ne $null -and $user -ne "") {
                 $user = $user.DistinguishedName   
                 $enterpriseAdminsFlag = "false"
                 $schemaAdminsFlag = "false"
