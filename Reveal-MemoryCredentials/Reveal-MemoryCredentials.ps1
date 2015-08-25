@@ -708,7 +708,7 @@ if($adminFlag -eq $false){
     $ArgumentList = 'Start-Process -FilePath powershell.exe -ArgumentList \"-ExecutionPolicy Bypass -File "{0}"\" -Verb Runas' -f $RWMC;
     Start-Process -FilePath powershell.exe -ArgumentList $ArgumentList -Wait -NoNewWindow;
     
-    #Stop-Script
+    Stop-Script
 }
 
 Write-Host "================================================================================================"
@@ -717,7 +717,7 @@ $remoteLocalFile = Read-Host 'Local computer, Remote computer or from a dump fil
 2) remote
 3) dump
 
-Enter your choice and press <ENTER>'
+Enter menu number and press <ENTER>'
 switch ($remoteLocalFile){
     "1" {$dump = "gen"}
     "2" {$dump = "remote"}
