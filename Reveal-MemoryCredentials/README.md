@@ -66,3 +66,11 @@ To run effectively this script you need two things :
 * Allow PowerShell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
 * An Internet connection
 * The script was tested on a 7 and on a 8 machine to retrieve password from Windows Server 2003,2008R2,2012,2012R2,7 and 8 and 10.
+
+#Get passwords from Group Policy Preferences configurations
+based on https://msdn.microsoft.com/en-us/library/cc422924.aspx (thanks Microsoft !)
+The script Get-LocalAdminGPPAccess.ps1 get encrypted password from groups.xml and decrypt it (it can be adapted for any .xml set by gpp which contain an encrypted password).
+
+The test.ps1 script is launched by Get-LocalAdminGPPAccess.ps1 to test the credentials obtained (session executed with these credentials).
+
+
