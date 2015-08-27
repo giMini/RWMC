@@ -73,7 +73,7 @@ $global:streamWriter = New-Object System.IO.StreamWriter $logPathName
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Start-Log{
+Function Start-Log {
 <#
 .SYNOPSIS
 These functions allow logging of scripts
@@ -104,7 +104,7 @@ by call to Add-Content or Out-File
     }
 }
  
-Function Write-Log{
+Function Write-Log {
 <#
 .SYNOPSIS
 Write log lines
@@ -126,7 +126,7 @@ The information line you want to write in the log file
     }
 }
  
-Function Write-Error{
+Function Write-Error {
 <#
 .SYNOPSIS
 Write the error caught you send to this function
@@ -156,7 +156,7 @@ Boolean value to force call to End-Log in case of force exit
     }
 }
  
-Function End-Log{
+Function End-Log {
 <#
 .SYNOPSIS
 End of execution
@@ -192,46 +192,22 @@ function Set-RegistryKey($computername, $parentKey, $nameRegistryKey, $valueRegi
     }
 }
 
-function CreateDirectoryIfNeeded ( [string] $directory )
-{
-	if ( ! ( Test-Path -Path $directory -type "Container" ) ) {
+function CreateDirectoryIfNeeded ( [string] $directory ) {
+	if (!(Test-Path -Path $directory -type "Container")) {
 		New-Item -type directory -Path $directory > $null
 	}
 }
 
-function Set-SymbolServer
-{
-    [CmdLetBinding(SupportsShouldProcess=$true)]
-    param ( [switch]   $Internal ,
-    		[switch]   $Public ,
-    		[string]   $CacheDirectory ,
-    		[string[]] $SymbolServers = @(),
-            [switch]   $CurrentEnvironmentOnly)
-              
-    if ( $CacheDirectory.Length -eq 0 ) {
-        $CacheDirectory = "c:\SYMBOLS\PUBLIC" 
-    }
+function Set-SymbolServer {              
+    $cacheDirectory = "c:\SYMBOLS\PUBLIC"     
+    $refSrcPath = "$cacheDirectory*http://referencesource.microsoft.com/symbols"
+    $msdlPath = "$cacheDirectory*http://msdl.microsoft.com/download/symbols"
+    $extraPaths = ""    
 
-    # It's public so we have a little different processing to do as there are
-    # two public symbol servers where MSFT provides symbols.
-    $refSrcPath = "$CacheDirectory*http://referencesource.microsoft.com/symbols"
-    $msdlPath = "$CacheDirectory*http://msdl.microsoft.com/download/symbols"
-    $extraPaths = ""
-        
-    # Poke on any additional symbol servers. I've keeping everything the
-    # same between VS as WinDBG.
-    for ( $i = 0 ; $i -lt $SymbolServers.Length ; $i++ ) {
-        $extraPaths += "SRV*$CacheDirectory*"
-        $extraPaths += $SymbolServers[$i]
-        $extraPaths += ";"
-    }
+    $envPath = "SRV*$refSrcPath;SRV*$msdlPath"    
 
-    $envPath = "$extraPaths" + "SRV*$refSrcPath;SRV*$msdlPath"    
-    if ($CurrentEnvironmentOnly) {
-        CreateDirectoryIfNeeded -directory $CacheDirectory
-        $env:_NT_SYMBOL_PATH = $envPath
-    }        
-    
+    CreateDirectoryIfNeeded -directory $cacheDirectory
+    $env:_NT_SYMBOL_PATH = $envPath    
 }
 
 function Write-Minidump ($process, $dumpFilePath) {
@@ -706,8 +682,7 @@ if($adminFlag -eq $false){
     $scriptPath = Split-Path $MyInvocation.InvocationName    
     $RWMC = $scriptPath + "\Reveal-MemoryCredentials.ps1"
     $ArgumentList = 'Start-Process -FilePath powershell.exe -ArgumentList \"-ExecutionPolicy Bypass -File "{0}"\" -Verb Runas' -f $RWMC;
-    Start-Process -FilePath powershell.exe -ArgumentList $ArgumentList -Wait -NoNewWindow;
-    
+    Start-Process -FilePath powershell.exe -ArgumentList $ArgumentList -Wait -NoNewWindow;    
     Stop-Script
 }
 
@@ -771,8 +746,12 @@ else {
                 $mode = 2
             }
             else{
-                if($operatingSystem -eq "6.3.9600" -or $operatingSystem -eq "10.0.10240"){    
+                if($operatingSystem -eq "6.3.9600" -or $operatingSystem -eq "10.0.10240" -or $operatingSystem -eq "10.0.10514"){    
                     $mode = "2r2"
+                }
+                else {
+                    Write-Output "The operating system could not be determined... terminating"
+                    Stop-Script 
                 }
             }
         }
