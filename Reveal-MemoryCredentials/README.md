@@ -69,7 +69,7 @@ To run effectively this script you need two things :
 
 #Get passwords from Group Policy Preferences configurations
 based on https://msdn.microsoft.com/en-us/library/cc422924.aspx (thanks Microsoft !)
-The script Get-LocalAdminGPPAccess.ps1 get encrypted password from groups.xml and decrypt it (it can be adapted for any .xml set by gpp which contain an encrypted password).
+The script Get-LocalAdminGPPAccess.ps1 get encrypted passwords from groups.xml and decrypt it (it can be adapted for any .xml set by gpp which contain an encrypted password).
 
 The test.ps1 script is launched by Get-LocalAdminGPPAccess.ps1 to test the credentials obtained (session executed with these credentials).
 
