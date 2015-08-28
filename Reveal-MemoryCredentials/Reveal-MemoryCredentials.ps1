@@ -74,7 +74,7 @@ if ((gwmi win32_computersystem).partofdomain -eq $true) {
 }
 
 if ((gwmi win32_computersystem).partofdomain -eq $true) {
-    if (Get-Module -ListAvailable -Name SomeModule) {
+    if (Get-Module -ListAvailable -Name activedirectory) {
         Import-Module activedirectory
     } else {
         Write-Host "Module activedirectory does not exist, importing..."
@@ -1180,7 +1180,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $loginPlainText = $loginPlainText1 -replace """",""                                     
         if ((gwmi win32_computersystem).partofdomain -eq $true) {
             $user = ""
-            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText}             
+            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText} -ErrorAction SilentlyContinue
             if(![string]::IsNullOrEmpty($user)) {
                 $user = $user.DistinguishedName   
                 $enterpriseAdminsFlag = "false"
