@@ -68,7 +68,12 @@ $logFileName = "Log_" + $launchDate + ".log"
 $logPathName = "$logDirectoryPath\$logFileName"
 
 $global:streamWriter = New-Object System.IO.StreamWriter $logPathName
+
 if ((gwmi win32_computersystem).partofdomain -eq $true) {
+    Import-Module activedirectory 
+}
+
+ if ((gwmi win32_computersystem).partofdomain -eq $true) {
     if (Get-Module -ListAvailable -Name SomeModule) {
         Import-Module activedirectory
     } else {
