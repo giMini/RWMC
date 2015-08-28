@@ -73,7 +73,7 @@ if ((gwmi win32_computersystem).partofdomain -eq $true) {
     Import-Module activedirectory 
 }
 
- if ((gwmi win32_computersystem).partofdomain -eq $true) {
+if ((gwmi win32_computersystem).partofdomain -eq $true) {
     if (Get-Module -ListAvailable -Name SomeModule) {
         Import-Module activedirectory
     } else {
