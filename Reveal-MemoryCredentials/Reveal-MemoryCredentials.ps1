@@ -68,15 +68,11 @@ $logFileName = "Log_" + $launchDate + ".log"
 $logPathName = "$logDirectoryPath\$logFileName"
 
 $global:streamWriter = New-Object System.IO.StreamWriter $logPathName
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 if ((gwmi win32_computersystem).partofdomain -eq $true) {
     Import-Module activedirectory 
 }
-=======
-if ((gwmi win32_computersystem).partofdomain -eq $true) {Import-Module activedirectory}
->>>>>>> master
-=======
+
 if ((gwmi win32_computersystem).partofdomain -eq $true) {
     if (Get-Module -ListAvailable -Name SomeModule) {
         Import-Module activedirectory
@@ -86,7 +82,6 @@ if ((gwmi win32_computersystem).partofdomain -eq $true) {
         Add-WindowsFeature RSAT-AD-PowerShell        
     }    
 }
->>>>>>> master
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
