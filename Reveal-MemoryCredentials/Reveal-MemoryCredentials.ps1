@@ -54,8 +54,6 @@ $loggingFunctions = "$scriptPath\logging\Logging.ps1"
 
 #$fullScriptPath = (Resolve-Path -Path $DebuggingScript).Path
 
-#Import-Module activedirectory 
-
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $scriptName = [System.IO.Path]::GetFileName($scriptFile)
@@ -70,6 +68,9 @@ $logFileName = "Log_" + $launchDate + ".log"
 $logPathName = "$logDirectoryPath\$logFileName"
 
 $global:streamWriter = New-Object System.IO.StreamWriter $logPathName
+if ((gwmi win32_computersystem).partofdomain -eq $true) {
+    Import-Module activedirectory 
+}
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -750,7 +751,7 @@ else {
                     $mode = "2r2"
                 }
                 else {
-                    Write-Output "The operating system could not be determined... terminating"
+                    Write-Output "The operating system could not be determined... terminating..."
                     Stop-Script 
                 }
             }
