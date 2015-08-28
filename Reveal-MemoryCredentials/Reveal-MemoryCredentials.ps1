@@ -1180,28 +1180,30 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $loginPlainText = $loginPlainText1 -replace """",""                                     
         if ((gwmi win32_computersystem).partofdomain -eq $true) {
             $user = ""
-            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText} -ErrorAction SilentlyContinue
-            if(![string]::IsNullOrEmpty($user)) {
-                $user = $user.DistinguishedName   
-                $enterpriseAdminsFlag = "false"
-                $schemaAdminsFlag = "false"
-                $domainAdminFlag = "false"
-                $administratorsFlag = "false"
-                $backupOperatorsFlag = "false"
-                if($enterpriseAdmins -ne ""){
-                    $enterpriseAdminsFlag = $enterpriseAdmins.Contains($user)
-                    if($enterpriseAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Enterprise Admins"}
-                }
-                if($schemaAdmins -ne ""){
-                    $schemaAdminsFlag = $schemaAdmins.Contains($user)
-                    if($schemaAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Schema Admins"}
-                }
-                $domainAdminFlag = $domainAdmins.Contains($user)
-                if($domainAdminFlag -eq "true") {$loginPlainText = $loginPlainText + " = Domain Admin"}
-                $administratorsFlag = $administrators.Contains($user)
-                if($administratorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Administrators"}
-                $backupOperatorsFlag = $backupOperators.Contains($user)
-                if($backupOperatorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Backup Operators"}            
+            if(![string]::IsNullOrEmpty($loginPlainText)) {
+	            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText}
+	            if(![string]::IsNullOrEmpty($user)) {
+	                $user = $user.DistinguishedName   
+	                $enterpriseAdminsFlag = "false"
+	                $schemaAdminsFlag = "false"
+	                $domainAdminFlag = "false"
+	                $administratorsFlag = "false"
+	                $backupOperatorsFlag = "false"
+	                if($enterpriseAdmins -ne ""){
+	                    $enterpriseAdminsFlag = $enterpriseAdmins.Contains($user)
+	                    if($enterpriseAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Enterprise Admins"}
+	                }
+	                if($schemaAdmins -ne ""){
+	                    $schemaAdminsFlag = $schemaAdmins.Contains($user)
+	                    if($schemaAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Schema Admins"}
+	                }
+	                $domainAdminFlag = $domainAdmins.Contains($user)
+	                if($domainAdminFlag -eq "true") {$loginPlainText = $loginPlainText + " = Domain Admin"}
+	                $administratorsFlag = $administrators.Contains($user)
+	                if($administratorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Administrators"}
+	                $backupOperatorsFlag = $backupOperators.Contains($user)
+	                if($backupOperatorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Backup Operators"}            
+	            }
             }
         }
         # Password
