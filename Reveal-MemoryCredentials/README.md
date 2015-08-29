@@ -66,3 +66,6 @@ To run effectively this script you need two things :
 * Allow PowerShell script on you machine, example : Set-ExecutionPolicy Unrestricted -force
 * An Internet connection
 * The script was tested on a 7 and on a 8 machine to retrieve password from Windows Server 2003,2008R2,2012,2012R2,7 and 8 and 10.
+
+#Get local Administrator password from Group Policy Preferences
+Launch Get-LocalAdminGPPAccess.ps1 script
