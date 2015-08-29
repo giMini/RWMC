@@ -621,7 +621,7 @@ switch ($remoteLocalFile){
 $osArchitecture = ""
 $operatingSystem = ""
 if($dump -eq "dump") {
-    $dump = Read-Host 'Enter the directory path of your lsass process dump (lsass.dmp)'
+    $dump = Read-Host 'Enter the path of your lsass process dump'
     $mode = Read-Host 'Mode (1 (Win 7 and 2008r2), 132 (Win 7 32 bits), 2 (Win 8 and 2012), 2r2 (Win 10 and 2012r2), 8.1 (Win 8.1) or 3 (Windows 2003))?'
     switch ($mode){
         1 {Write-Output "Try to reveal password for Windows 7 or 2008r2"}
@@ -644,8 +644,10 @@ else {
         $osArchitecture =  (Get-WmiObject Win32_OperatingSystem -ComputerName $server).OSArchitecture
     }
     else {
-        $operatingSystem = (Get-WmiObject Win32_OperatingSystem).version
-        $osArchitecture =  (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+        if($dump -eq "gen") { 
+            $operatingSystem = (Get-WmiObject Win32_OperatingSystem).version
+            $osArchitecture =  (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+        }
     }
     if($operatingSystem -eq "5.1.2600" -or $operatingSystem -eq "5.2.3790"){
         $mode = 3
@@ -783,7 +785,7 @@ else {
         Write-Progress -Activity "msdsc log created" -status "Running..." -id 1
     }
     else {
-        $file = "$dump\lsass.dmp"
+        $file = $dump #\lsass.dmp"
     }
 }
    
