@@ -138,7 +138,7 @@ function Write-Minidump ($process, $dumpFilePath) {
     $processId = $process.Id
     $processName = $process.Name
     $processHandle = $process.Handle
-    $processFileName = "msdsc.dmp"
+    $processFileName = "$($processName).dmp"
 
     $processDumpPath = "$dumpFilePath\$processFileName"
 
