@@ -1,7 +1,7 @@
 # RWMC
 Powershell - Reveal Windows Memory Credentials 
 
-RWMC is no longer supported.
+# RWMC is no longer supported.
 
 Please use this repository now : 
 
